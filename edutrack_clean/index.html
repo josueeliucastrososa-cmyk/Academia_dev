@@ -2,6 +2,16 @@
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+  <!-- ═══ FAVICON & PWA ═══ -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6aff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Academia">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Academia — Organiza tu semestre universitario">
 <title>Academia — Dashboard Académico</title>
@@ -9,12 +19,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet"></noscript>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="css/style.css">
 <!-- PDF.js for PDF text extraction -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Tesseract.js for OCR on images and scanned PDFs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -1886,6 +1893,21 @@
         navigator.serviceWorker.register('/sw.js')
           .then(() => console.log('Academia PWA ready ✅'))
           .catch(e => console.log('SW error:', e));
+      });
+    }
+  </script>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Academia PWA ✅'))
+          .catch(e => console.log('SW (solo funciona en Netlify):', e));
       });
     }
   </script>
