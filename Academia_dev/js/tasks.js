@@ -346,3 +346,57 @@ function _renderTasks() {
     </div>`;
   }).join('');
 }
+
+// ═══════════════════════════════════════════════
+// ATTACHMENT UPLOAD — implementación completa
+// ═══════════════════════════════════════════════
+function handleAttachmentUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // 5MB limit
+  if (file.size > 5 * 1024 * 1024) {
+    alert('El archivo es muy grande. Máximo 5MB.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const isImage = file.type.startsWith('image/');
+    const isPdf   = file.type === 'application/pdf';
+
+    _editAttachments.push({
+      name: file.name,
+      type: isPdf ? 'pdf' : isImage ? 'image' : 'file',
+      size: file.size,
+      data: e.target.result, // base64
+      date: new Date().toLocaleDateString('es-ES')
+    });
+    renderAttachmentsEditor(_editAttachments);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeAttachment(i) {
+  _editAttachments.splice(i, 1);
+  renderAttachmentsEditor(_editAttachments);
+}
+
+function previewAttachment(i) {
+  const a = _editAttachments[i];
+  if (!a?.data) return;
+
+  if (a.type === 'image') {
+    // Open image in lightbox
+    const w = window.open();
+    w.document.write(`<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+      <img src="${a.data}" style="max-width:100%;max-height:100vh;object-fit:contain;">
+    </body></html>`);
+  } else if (a.type === 'pdf') {
+    // Open PDF in new tab
+    const w = window.open();
+    w.document.write(`<html><body style="margin:0;">
+      <iframe src="${a.data}" style="width:100vw;height:100vh;border:none;"></iframe>
+    </body></html>`);
+  }
+}
