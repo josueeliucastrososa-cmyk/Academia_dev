@@ -348,68 +348,13 @@ function _renderTasks() {
   }).join('');
 }
 
-// ═══════════════════════════════════════════════
-// ATTACHMENT UPLOAD — implementación completa
-// ═══════════════════════════════════════════════
-function handleAttachmentUpload(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  // 5MB limit
-  if (file.size > 5 * 1024 * 1024) {
-    alert('El archivo es muy grande. Máximo 5MB.');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const isImage = file.type.startsWith('image/');
-    const isPdf   = file.type === 'application/pdf';
-
-    _editAttachments.push({
-      name: file.name,
-      type: isPdf ? 'pdf' : isImage ? 'image' : 'file',
-      size: file.size,
-      data: e.target.result, // base64
-      date: new Date().toLocaleDateString('es-ES')
-    });
-    renderAttachmentsEditor(_editAttachments);
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeAttachment(i) {
-  _editAttachments.splice(i, 1);
-  renderAttachmentsEditor(_editAttachments);
-}
-
-function previewAttachment(i) {
-  const a = _editAttachments[i];
-  if (!a?.data) return;
-
-  if (a.type === 'image') {
-    // Open image in lightbox
-    const w = window.open();
-    w.document.write(`<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;">
-      <img src="${a.data}" style="max-width:100%;max-height:100vh;object-fit:contain;">
-    </body></html>`);
-  } else if (a.type === 'pdf') {
-    // Open PDF in new tab
-    const w = window.open();
-    w.document.write(`<html><body style="margin:0;">
-      <iframe src="${a.data}" style="width:100vw;height:100vh;border:none;"></iframe>
-    </body></html>`);
-  }
-}
-
 // ═══════════════════════════════════════════════════════
-// ATTACHMENT UPLOAD — fix completo
+// ATTACHMENT UPLOAD
 // ═══════════════════════════════════════════════════════
 function handleAttachmentUpload(input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) { alert('Máximo 5MB por archivo.'); input.value=''; return; }
-
   const reader = new FileReader();
   reader.onload = function(e) {
     _editAttachments.push({
@@ -422,46 +367,36 @@ function handleAttachmentUpload(input) {
     renderAttachmentsEditor(_editAttachments);
   };
   reader.readAsDataURL(file);
-  input.value = ''; // reset so same file can be re-added
+  input.value = '';
 }
-
 function removeAttachment(i) {
   _editAttachments.splice(i, 1);
   renderAttachmentsEditor(_editAttachments);
 }
-
 function previewAttachment(i) {
   const a = _editAttachments[i];
   if (a) _openAttachmentPreview(a);
 }
-
 function previewTaskAttachment(taskId, i) {
   const t = State.tasks.find(x => x.id === taskId);
   if (t?.attachments?.[i]) _openAttachmentPreview(t.attachments[i]);
 }
-
 function _openAttachmentPreview(a) {
   if (!a?.data) { alert('Sin datos para previsualizar.'); return; }
   if (a.type === 'image') {
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html><head><title>${a.name}</title>
-      <style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;}
-      img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head>
-      <body><img src="${a.data}" alt="${a.name}"></body></html>`);
+    w.document.write('<!DOCTYPE html><html><head><title>' + a.name + '</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src="' + a.data + '" alt="' + a.name + '"></body></html>');
   } else if (a.type === 'pdf') {
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html><head><title>${a.name}</title>
-      <style>body{margin:0;}</style></head>
-      <body><iframe src="${a.data}" style="width:100vw;height:100vh;border:none;"></iframe></body></html>`);
+    w.document.write('<!DOCTYPE html><html><head><title>' + a.name + '</title><style>body{margin:0;}</style></head><body><iframe src="' + a.data + '" style="width:100vw;height:100vh;border:none;"></iframe></body></html>');
   } else {
-    // Generic download
     const link = document.createElement('a');
     link.href = a.data; link.download = a.name; link.click();
   }
 }
 
 // ═══════════════════════════════════════════════════════
-// TASK DETAIL VIEW — modal de detalles
+// TASK DETAIL VIEW
 // ═══════════════════════════════════════════════════════
 function openTaskDetail(id) {
   const t = State.tasks.find(x => x.id === id);
@@ -469,59 +404,58 @@ function openTaskDetail(id) {
   const m = getMat(t.matId);
   const prog = subtaskProgress(t);
 
-  // Build modal HTML
-  const subtasksHtml = t.subtasks?.length ? `
-    <div class="detail-section">
-      <div class="detail-section-title">📋 Subtareas</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div class="prog-bar" style="flex:1;height:6px;">
-          <div class="prog-fill" style="background:${prog?.pct===100?'#4ade80':'#7c6aff'};width:${prog?.pct||0}%;"></div>
-        </div>
-        <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">${prog?.done||0}/${prog?.total||0}</span>
-      </div>
-      ${t.subtasks.map((s,i) => `
-        <div onclick="toggleSubtask('${t.id}',${i});openTaskDetail('${t.id}')"
-          style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;${s.done?'opacity:.5':''}">
-          <div style="width:16px;height:16px;border-radius:4px;flex-shrink:0;border:2px solid ${s.done?'var(--accent)':'var(--border2)'};
-            background:${s.done?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;">
-            ${s.done?'<span style="font-size:10px;color:#fff;">✓</span>':''}
-          </div>
-          <span style="font-size:13px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.text}</span>
-        </div>`).join('')}
-    </div>` : '';
+  const subtasksHtml = t.subtasks && t.subtasks.length ? (
+    '<div class="detail-section">' +
+    '<div class="detail-section-title">📋 Subtareas</div>' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+    '<div class="prog-bar" style="flex:1;height:6px;"><div class="prog-fill" style="background:' + (prog && prog.pct===100?'#4ade80':'#7c6aff') + ';width:' + (prog?prog.pct:0) + '%;"></div></div>' +
+    '<span style="font-size:11px;color:var(--text3);font-family:Space Mono,monospace;">' + (prog?prog.done:0) + '/' + (prog?prog.total:0) + '</span>' +
+    '</div>' +
+    t.subtasks.map(function(s,i) {
+      return '<div onclick="toggleSubtask(\'' + t.id + '\',' + i + ');openTaskDetail(\'' + t.id + '\')" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;' + (s.done?'opacity:.5':'') + '">' +
+        '<div style="width:16px;height:16px;border-radius:4px;flex-shrink:0;border:2px solid ' + (s.done?'var(--accent)':'var(--border2)') + ';background:' + (s.done?'var(--accent)':'transparent') + ';display:flex;align-items:center;justify-content:center;">' +
+        (s.done?'<span style="font-size:10px;color:#fff;">✓</span>':'') +
+        '</div><span style="font-size:13px;' + (s.done?'text-decoration:line-through;color:var(--text3);':'') + '">' + s.text + '</span></div>';
+    }).join('') +
+    '</div>'
+  ) : '';
 
-  const attachHtml = t.attachments?.length ? `
-    <div class="detail-section">
-      <div class="detail-section-title">📎 Archivos adjuntos</div>
-      ${t.attachments.map((a,i) => `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);
-          border-radius:8px;margin-bottom:6px;border:1px solid var(--border);">
-          <span style="font-size:20px;">${a.type==='pdf'?'📄':a.type==='image'?'🖼️':'📎'}</span>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</div>
-            <div style="font-size:10px;color:var(--text3);">${a.date||''} · ${a.size ? Math.round(a.size/1024)+'KB' : ''}</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="previewTaskAttachment('${t.id}',${i})" style="font-size:11px;">👁 Ver</button>
-        </div>`).join('')}
-    </div>` : '';
+  const attachHtml = t.attachments && t.attachments.length ? (
+    '<div class="detail-section">' +
+    '<div class="detail-section-title">📎 Archivos adjuntos</div>' +
+    t.attachments.map(function(a,i) {
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);">' +
+        '<span style="font-size:20px;">' + (a.type==='pdf'?'📄':a.type==='image'?'🖼️':'📎') + '</span>' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + a.name + '</div>' +
+        '<div style="font-size:10px;color:var(--text3);">' + (a.date||'') + ' · ' + (a.size?Math.round(a.size/1024)+'KB':'') + '</div></div>' +
+        '<button class="btn btn-ghost btn-sm" onclick="previewTaskAttachment(\'' + t.id + '\',' + i + ')" style="font-size:11px;">👁 Ver</button>' +
+        '</div>';
+    }).join('') +
+    '</div>'
+  ) : '';
 
-  const commentsHtml = t.comments?.length ? `
-    <div class="detail-section">
-      <div class="detail-section-title">💬 Comentarios</div>
-      ${t.comments.map(c => `
-        <div style="background:var(--surface2);border-radius:7px;padding:9px 11px;margin-bottom:6px;border-left:3px solid var(--accent);">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:'Space Mono',monospace;">${c.date||''}</div>
-          <div style="font-size:13px;white-space:pre-wrap;">${(c.text||'').replace(/</g,'&lt;')}</div>
-        </div>`).join('')}
-    </div>` : '';
+  const commentsHtml = t.comments && t.comments.length ? (
+    '<div class="detail-section">' +
+    '<div class="detail-section-title">💬 Comentarios</div>' +
+    t.comments.map(function(c) {
+      return '<div style="background:var(--surface2);border-radius:7px;padding:9px 11px;margin-bottom:6px;border-left:3px solid var(--accent);">' +
+        '<div style="font-size:10px;color:var(--text3);margin-bottom:4px;font-family:Space Mono,monospace;">' + (c.date||'') + '</div>' +
+        '<div style="font-size:13px;white-space:pre-wrap;">' + (c.text||'').replace(/</g,'&lt;') + '</div></div>';
+    }).join('') +
+    '</div>'
+  ) : '';
 
-  const notesHtml = t.notes ? `
-    <div class="detail-section">
-      <div class="detail-section-title">📝 Descripción</div>
-      <div style="font-size:13px;color:var(--text2);white-space:pre-wrap;padding:10px;background:var(--surface2);border-radius:8px;">${t.notes.replace(/</g,'&lt;')}</div>
-    </div>` : '';
+  const notesHtml = t.notes ? (
+    '<div class="detail-section">' +
+    '<div class="detail-section-title">📝 Descripción</div>' +
+    '<div style="font-size:13px;color:var(--text2);white-space:pre-wrap;padding:10px;background:var(--surface2);border-radius:8px;">' + t.notes.replace(/</g,'&lt;') + '</div>' +
+    '</div>'
+  ) : '';
 
-  // Check if modal exists, if not create it
+  const emptyHtml = (!subtasksHtml && !notesHtml && !attachHtml && !commentsHtml) ?
+    '<div style="text-align:center;padding:32px;color:var(--text3);"><div style="font-size:32px;margin-bottom:8px;">📋</div><div>Sin detalles adicionales</div>' +
+    '<button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="closeTaskDetail();openTaskModal(\'' + t.id + '\')">✏️ Agregar detalles</button></div>' : '';
+
   let modal = document.getElementById('modal-task-detail');
   if (!modal) {
     modal = document.createElement('div');
@@ -531,58 +465,40 @@ function openTaskDetail(id) {
     document.body.appendChild(modal);
   }
 
-  modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6);">
-      <!-- Header -->
-      <div style="display:flex;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border);background:var(--surface2);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:16px;font-weight:800;margin-bottom:6px;">${t.done?'<s style="opacity:.5">':''}${t.title}${t.done?'</s>':''}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-            <span style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">${m.icon||'📚'} ${m.name||'—'}</span>
-            <span class="type-badge ${getTypeBadgeClass(t.type)}">${t.type||'Tarea'}</span>
-            ${prioBadge(t.priority)}
-            ${t.due ? `<span style="font-size:11px;color:var(--text3);">📅 ${fmtD(t.due)}</span>` : ''}
-            ${t.timeEst ? `<span style="font-size:11px;color:var(--text3);">⏱ ${t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min'}</span>` : ''}
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="btn btn-ghost btn-sm" onclick="closeTaskDetail();openTaskModal('${t.id}')" title="Editar">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="closeTaskDetail()" style="font-size:16px;padding:4px 8px;">✕</button>
-        </div>
-      </div>
-      <!-- Body -->
-      <div style="overflow-y:auto;padding:16px 20px;flex:1;">
-        ${subtasksHtml}
-        ${notesHtml}
-        ${attachHtml}
-        ${commentsHtml}
-        ${!subtasksHtml && !notesHtml && !attachHtml && !commentsHtml 
-          ? `<div style="text-align:center;padding:32px;color:var(--text3);">
-              <div style="font-size:32px;margin-bottom:8px;">📋</div>
-              <div>Sin detalles adicionales</div>
-              <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="closeTaskDetail();openTaskModal('${t.id}')">✏️ Agregar detalles</button>
-             </div>` : ''}
-      </div>
-      <!-- Footer -->
-      <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);">
-        <span style="font-size:11px;color:var(--text3);">
-          ${t.attachments?.length ? `📎 ${t.attachments.length} archivo${t.attachments.length>1?'s':''}` : ''}
-          ${t.comments?.length ? ` · 💬 ${t.comments.length}` : ''}
-        </span>
-        <button class="btn btn-primary btn-sm" onclick="toggleTask('${t.id}');closeTaskDetail()">
-          ${t.done ? '↩ Marcar pendiente' : '✅ Marcar completada'}
-        </button>
-      </div>
-    </div>`;
+  const prio = prioBadge(t.priority);
+  const typeBadge = getTypeBadgeClass(t.type);
+  const dueStr = t.due ? '<span style="font-size:11px;color:var(--text3);">📅 ' + fmtD(t.due) + '</span>' : '';
+  const timeStr = t.timeEst ? '<span style="font-size:11px;color:var(--text3);">⏱ ' + (t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min') + '</span>' : '';
+  const titleStr = t.done ? '<s style="opacity:.5">' + t.title + '</s>' : t.title;
+  const attachCount = t.attachments && t.attachments.length ? '📎 ' + t.attachments.length + ' archivo' + (t.attachments.length>1?'s':'') : '';
+  const commCount = t.comments && t.comments.length ? ' · 💬 ' + t.comments.length : '';
 
-  // Add detail section styles if not present
+  modal.innerHTML =
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6);">' +
+    '<div style="display:flex;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border);background:var(--surface2);">' +
+    '<div style="flex:1;min-width:0;">' +
+    '<div style="font-size:16px;font-weight:800;margin-bottom:6px;">' + titleStr + '</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+    '<span style="background:' + (m.color||'#7c6aff') + '22;color:' + (m.color||'#7c6aff') + ';border:1px solid ' + (m.color||'#7c6aff') + '44;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">' + (m.icon||'📚') + ' ' + (m.name||'—') + '</span>' +
+    '<span class="type-badge ' + typeBadge + '">' + (t.type||'Tarea') + '</span>' +
+    prio + dueStr + timeStr +
+    '</div></div>' +
+    '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+    '<button class="btn btn-ghost btn-sm" onclick="closeTaskDetail();openTaskModal(\'' + t.id + '\')" title="Editar">✏️</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="closeTaskDetail()" style="font-size:16px;padding:4px 8px;">✕</button>' +
+    '</div></div>' +
+    '<div style="overflow-y:auto;padding:16px 20px;flex:1;">' + subtasksHtml + notesHtml + attachHtml + commentsHtml + emptyHtml + '</div>' +
+    '<div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);">' +
+    '<span style="font-size:11px;color:var(--text3);">' + attachCount + commCount + '</span>' +
+    '<button class="btn btn-primary btn-sm" onclick="toggleTask(\'' + t.id + '\');closeTaskDetail()">' + (t.done?'↩ Marcar pendiente':'✅ Marcar completada') + '</button>' +
+    '</div></div>';
+
   if (!document.getElementById('task-detail-styles')) {
     const s = document.createElement('style');
     s.id = 'task-detail-styles';
-    s.textContent = `.detail-section{margin-bottom:18px;} .detail-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:'Space Mono',monospace;}`;
+    s.textContent = '.detail-section{margin-bottom:18px;}.detail-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:Space Mono,monospace;}';
     document.head.appendChild(s);
   }
-
   modal.style.display = 'flex';
 }
 
