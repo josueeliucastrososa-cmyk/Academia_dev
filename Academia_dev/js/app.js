@@ -2358,6 +2358,62 @@ function _getGreeting() {
 }
 
 function init() {
+  // ════════════════════════════════════════════════════════
+  // VERIFICACIÓN DE AUTENTICACIÓN — BLOQUEAR SI NO ESTÁ AUTENTICADO
+  // ════════════════════════════════════════════════════════
+  
+  // Crear overlay de loading mientras se verifica
+  const loadingOverlay = document.createElement('div');
+  loadingOverlay.id = 'auth-check-overlay';
+  loadingOverlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    background: #0a0a0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  `;
+  loadingOverlay.innerHTML = `
+    <div style="text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+      <div style="color: #e8e8f0; font-size: 14px; font-family: Syne, sans-serif;">Verificando sesión...</div>
+    </div>
+  `;
+  document.body.insertBefore(loadingOverlay, document.body.firstChild);
+
+  // Verificar auth ANTES de hacer nada
+  (async () => {
+    try {
+      const auth = await window.Auth.checkAuth();
+      
+      if (!auth) {
+        console.log('❌ NO AUTENTICADO - Redirigiendo a login');
+        window.location.href = 'auth-page.html';
+        return; // STOP aquí, no continuar
+      }
+
+      console.log('✅ AUTENTICADO:', auth.email);
+      
+      // Quitar overlay de loading
+      const overlay = document.getElementById('auth-check-overlay');
+      if (overlay) overlay.remove();
+      
+      // CONTINUAR CON INIT NORMAL
+      continueInit(auth);
+      
+    } catch (err) {
+      console.error('❌ Error verificando auth:', err);
+      window.location.href = 'auth-page.html';
+    }
+  })();
+}
+
+function continueInit(auth) {
+  // ════════════════════════════════════════════════════════
+  // INIT NORMAL (solo si está autenticado)
+  // ════════════════════════════════════════════════════════
+  
   const now = new Date();
   document.getElementById('topbar-date').textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('ov-date').textContent     = now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
@@ -2387,17 +2443,10 @@ function init() {
   const h = now.getHours();
   
   // Obtener nombre real del usuario autenticado (Google)
-  (async () => {
-    try {
-      const auth = await window.Auth.checkAuth();
-      if (auth && auth.name) {
-        window._currentUserName = auth.name.split(' ')[0]; // Primer nombre
-        document.getElementById('ov-greeting').textContent = _getGreeting();
-      }
-    } catch (e) {
-      console.log('No auth available for name');
-    }
-  })();
+  if (auth && auth.name) {
+    window._currentUserName = auth.name.split(' ')[0]; // Primer nombre
+  }
+
   
   document.getElementById('ov-greeting').textContent = _getGreeting();
 
@@ -2497,7 +2546,8 @@ function init() {
   document.querySelectorAll('.modal-overlay').forEach(o =>
     o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
   );
-}
+} // FIN continueInit()
+
 
 document.addEventListener('DOMContentLoaded', init);
 
