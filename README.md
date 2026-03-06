@@ -18,16 +18,17 @@ Dashboard académico para estudiantes universitarios. Organiza tus materias, tar
 ## 🛠️ Tecnologías
 
 - HTML · CSS · JavaScript (vanilla)
+- [Supabase](https://supabase.com) — autenticación y base de datos en la nube
+- [Google OAuth](https://developers.google.com/identity) — inicio de sesión con Google
 - [PDF.js](https://mozilla.github.io/pdf.js/) — visualización de PDFs
 - [Tesseract.js](https://tesseract.projectnaptha.com/) — OCR de imágenes
-- [Netlify](https://netlify.com) — hosting
-- `localStorage` — almacenamiento local (sin backend, por ahora)
+- [Vercel](https://vercel.com) — hosting y despliegue
 
 ## 🚀 Uso
 
 1. Clona el repositorio
 2. Abre `index.html` en tu navegador
-3. O visita la versión en vivo: **[academia-dev.netlify.app]()**
+3. O visita la versión en vivo: **[academia-dev.vercel.app]()**
 
 No requiere instalación ni servidor.
 
@@ -36,10 +37,17 @@ No requiere instalación ni servidor.
 ```
 ACADEMIA_DEV/
 ├── index.html          ← Estructura HTML
+├── auth-page.html      ← Login con Google
+├── privacidad.html     ← Política de privacidad
+├── terminos.html       ← Términos y condiciones
+├── sw.js               ← Service Worker (PWA)
+├── manifest.json       ← Manifiesto PWA
 ├── css/
 │   └── style.css       ← Estilos + responsive
 └── js/
     ├── app.js          ← Estado, páginas, overview
+    ├── auth.js         ← Google OAuth con Supabase
+    ├── db.js           ← Sincronización con Supabase
     ├── calificaciones.js
     ├── tasks.js
     ├── calendar.js
@@ -63,8 +71,9 @@ El uso de IA como herramienta de desarrollo es una práctica legítima y cada ve
 
 ## 🗺️ Roadmap
 
-- [ ] Login con Google/correo (Supabase)
-- [ ] Base de datos en la nube (datos por usuario)
+- [x] Login con Google/correo (Supabase)
+- [x] Base de datos en la nube (datos por usuario)
+- [x] Sincronización automática entre dispositivos
 - [ ] PWA — instalable en Android/iOS
 - [ ] APK nativo con Capacitor
 - [ ] Dominio propio
