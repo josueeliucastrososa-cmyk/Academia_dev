@@ -7,12 +7,13 @@ const CACHE_NAME = 'academia-v4';
 const STATIC_ASSETS = [
   '/icon-192.png',
   '/icon-512.png',
-  '/favicon.ico',
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(STATIC_ASSETS.map(url => cache.add(url)))
+    )
   );
   self.skipWaiting();
 });

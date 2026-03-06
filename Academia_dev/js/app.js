@@ -242,6 +242,27 @@ function closeSemester(id) {
   renderSemesterBadge();
 }
 
+function updateBadge() {
+  try {
+    const pending = (State.tasks || []).filter(t => !t.done).length;
+    // Sidebar badge (desktop)
+    const bDesk = document.getElementById('badge-tasks');
+    if (bDesk) {
+      bDesk.textContent = pending;
+      bDesk.style.display = pending > 0 ? '' : 'none';
+    }
+    // Mobile nav badge
+    const bMob = document.getElementById('badge-tasks-m');
+    if (bMob) {
+      bMob.textContent = pending;
+      bMob.style.display = pending > 0 ? '' : 'none';
+    }
+    // Overview pending badge
+    const bOv = document.getElementById('ov-pending-badge');
+    if (bOv) bOv.textContent = pending > 0 ? `${pending} pendiente${pending !== 1 ? 's' : ''}` : '';
+  } catch(e) { console.warn('updateBadge error', e); }
+}
+
 function _refreshAllViews() {
   try {
     fillMatSels(); fillTopicMatSel(); fillPomSel(); fillNotesSel(); fillExamSel();
