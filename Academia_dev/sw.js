@@ -1,29 +1,22 @@
-const CACHE_NAME = 'academia-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/auth-page.html',
-  '/css/style.css',
-  '/js/auth.js',
-  '/js/app.js',
-  '/js/calificaciones.js',
-  '/js/tasks.js',
-  '/js/calendar.js',
-  '/js/notes.js',
-  '/js/chrono.js',
+// ═══════════════════════════════════════════════
+// SERVICE WORKER — Network First
+// Siempre intenta red primero, caché como fallback
+// ═══════════════════════════════════════════════
+const CACHE_NAME = 'academia-v4';
+
+const STATIC_ASSETS = [
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/favicon.ico',
 ];
 
-// Install — cache all assets
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
-// Activate — clean old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -33,9 +26,27 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch — serve from cache, fallback to network
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
+  const url = new URL(e.request.url);
+  if (url.origin !== location.origin) return;
+
+  const isAppFile = /\.(html|js|css)$/.test(url.pathname) || url.pathname === '/';
+
+  if (isAppFile) {
+    // Network first — siempre lo más reciente
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    // Imágenes — cache first
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request))
+    );
+  }
 });

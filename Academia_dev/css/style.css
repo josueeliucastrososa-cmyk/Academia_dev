@@ -969,3 +969,100 @@ html {
   /* Ocultar elementos que desbordan en mobile */
   .search-wrap { max-width: 120px !important; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE CRITICAL FIXES
+   ══════════════════════════════════════════════════════════ */
+
+/* Fix zoom en inputs iOS/Android */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="date"],
+  input[type="time"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Evitar scroll horizontal */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  .main, .content, .topbar {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Topbar compacto */
+  .topbar {
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+  }
+  .topbar-right {
+    gap: 4px !important;
+    flex-shrink: 0;
+  }
+  /* Ocultar botones menos importantes en mobile */
+  .topbar-right .btn-ghost { display: none !important; }
+  #theme-btn, #ui-sound-btn { display: none !important; }
+  /* Mostrar solo los esenciales */
+  #topbar-date { display: none !important; }
+
+  /* Overview grid → columna */
+  #page-overview > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stats row */
+  .stats-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Cards padding */
+  .card-body { padding: 10px 12px !important; }
+  .card-header { padding: 10px 12px !important; }
+
+  /* Modal bottom sheet */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 18px 18px 0 0 !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+  }
+
+  /* Barra inferior respeta safe area */
+  .mobile-nav {
+    padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  }
+  .content {
+    padding-bottom: 90px !important;
+  }
+
+  /* Grids de pomodoro → columna */
+  #page-pomodoro > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stats página → 2 columnas máx */
+  #stats-summary {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Muy pequeño (< 380px) ── */
+@media (max-width: 380px) {
+  .stats-row { grid-template-columns: 1fr !important; }
+  .mm-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
