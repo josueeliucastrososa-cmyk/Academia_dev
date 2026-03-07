@@ -36,7 +36,7 @@ const DB = {
   async getGroupMembers(groupId) {
     const { data, error } = await SS.client
       .from('social_members')
-      .select('role, joined_at, social_profiles!fk_social_members_profile(id, username, avatar_url)')
+      .select('role, joined_at, social_profiles!social_members_user_id_fkey(id, username, avatar_url)')
       .eq('group_id', groupId);
     if (error) throw error;
     return data.map(m => ({ ...m.social_profiles, role: m.role, joined_at: m.joined_at }));
