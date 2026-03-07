@@ -1,237 +1,296 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- * DB.JS — Capa de base de datos Supabase v2
- * Tablas: user_semestres, user_settings, user_history
- * ═══════════════════════════════════════════════════════════════
- */
+// ═══════════════════════════════════════════════════════════════
+// STUDYSPACE — db.js
+// Todas las operaciones contra Supabase
+// ═══════════════════════════════════════════════════════════════
 
-(function () {
+window.SS = window.SS || {};
 
-  // ── Sync status UI ────────────────────────────────────────────
-  function _showSync(msg, type = 'info') {
-    let el = document.getElementById('db-sync-indicator');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'db-sync-indicator';
-      el.style.cssText = `
-        position:fixed;bottom:16px;right:16px;z-index:9999;
-        padding:6px 12px;border-radius:8px;font-size:11px;
-        font-family:'Space Mono',monospace;letter-spacing:0.5px;
-        transition:opacity 0.4s;pointer-events:none;
-      `;
-      document.body.appendChild(el);
-    }
-    const colors = {
-      info:    'background:#1a1a2e;color:#7c6aff;border:1px solid #7c6aff44',
-      success: 'background:#0a2e1a;color:#4ade80;border:1px solid #4ade8044',
-      error:   'background:#2e0a0a;color:#f87171;border:1px solid #f8717144',
-      saving:  'background:#2e2a0a;color:#fbbf24;border:1px solid #fbbf2444',
-    };
-    el.style.cssText += ';' + colors[type];
-    el.textContent = msg;
-    el.style.opacity = '1';
-    if (type !== 'saving') {
-      setTimeout(() => { el.style.opacity = '0'; }, 2500);
-    }
-  }
+const DB = {
+  // ── Grupos ──────────────────────────────────────────────────
 
-  // ── Timers ────────────────────────────────────────────────────
-  let _saveTimer = null;
-  let _syncTimer = null;
+  async getMyGroups(userId) {
+    const { data, error } = await SS.client
+      .from('social_members')
+      .select('role, social_groups(id, name, description, invite_code, created_by, created_at)')
+      .eq('user_id', userId);
+    if (error) throw error;
+    return data.map(m => ({ ...m.social_groups, myRole: m.role }));
+  },
 
-  // ── Main DB object ────────────────────────────────────────────
-  const DB = {
+  async createGroup(name, description, userId) {
+    // 1. Crear grupo
+    const { data: group, error } = await SS.client
+      .from('social_groups')
+      .insert({ name, description, created_by: userId })
+      .select()
+      .single();
+    if (error) throw error;
 
-    _userId: null,
-    _ready:  false,
-    _lastSync:     0,
-    _syncThrottle: 10000,
+    // 2. Unirse como admin
+    await SS.client.from('social_members').insert({
+      group_id: group.id,
+      user_id: userId,
+      role: 'admin'
+    });
 
-    init(userId) {
-      this._userId = userId;
-      this._ready  = true;
-      console.log('✅ DB initialized for user:', userId);
-      this._setupSyncListeners();
-    },
+    return group;
+  },
 
-    _setupSyncListeners() {
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-          clearTimeout(_syncTimer);
-          _syncTimer = setTimeout(() => {
-            console.log('📱 Tab visible - sincronizando...');
-            this._syncFromSupabase();
-          }, 1500);
-        }
-      });
-      setInterval(() => { this._syncFromSupabase(); }, 60000);
-    },
+  async getGroupMembers(groupId) {
+    const { data, error } = await SS.client
+      .from('social_members')
+      .select('role, joined_at, social_profiles!social_members_user_id_fkey(id, username, avatar_url)')
+      .eq('group_id', groupId);
+    if (error) throw error;
+    return data.map(m => ({ ...m.social_profiles, role: m.role, joined_at: m.joined_at }));
+  },
 
-    async _syncFromSupabase() {
-      if (!this._ready) return;
-      const now = Date.now();
-      if (now - this._lastSync < this._syncThrottle) return;
-      this._lastSync = now;
+  async deleteGroup(groupId) {
+    const { error } = await SS.client.from('social_groups').delete().eq('id', groupId);
+    if (error) throw error;
+  },
 
-      try {
-        const dbData = await this.load();
-        if (!dbData) return;
+  async leaveGroup(groupId, userId) {
+    const { error } = await SS.client
+      .from('social_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', userId);
+    if (error) throw error;
+  },
 
-        const remSem = dbData.semestres || [];
-        const remSet = dbData.settings  || {};
+  // ── Mensajes ─────────────────────────────────────────────────
 
-        const semChanged = JSON.stringify(State.semestres || []) !== JSON.stringify(remSem);
-        const setChanged = JSON.stringify(State.settings  || {}) !== JSON.stringify(remSet);
+  async getMessages(groupId, limit = 60) {
+    const { data, error } = await SS.client
+      .from('social_messages')
+      .select('*, social_profiles(username, avatar_url)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true })
+      .limit(limit);
+    if (error) throw error;
+    return data;
+  },
 
-        if (semChanged || setChanged) {
-          console.log('🔄 Cambios del servidor detectados, actualizando...');
-          if (semChanged) {
-            State.semestres = remSem;
-            try { localStorage.setItem('academia_v4_semestres', JSON.stringify(remSem)); } catch(e) {}
-          }
-          if (setChanged) {
-            Object.assign(State.settings, remSet);
-            try { localStorage.setItem('academia_v3_settings', JSON.stringify(remSet)); } catch(e) {}
-          }
+  async sendMessage(groupId, userId, content) {
+    const { data, error } = await SS.client
+      .from('social_messages')
+      .insert({ group_id: groupId, user_id: userId, content })
+      .select('*, social_profiles(username, avatar_url)')
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-          const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
-          if      (activePage === 'overview')   { typeof renderOverview  === 'function' && renderOverview(); }
-          else if (activePage === 'tareas')     { typeof renderTasks     === 'function' && renderTasks(); }
-          else if (activePage === 'calendario') { typeof renderCalendar  === 'function' && renderCalendar(); }
-          else if (activePage === 'notas')      { typeof renderNotes     === 'function' && renderNotes(); }
-          else if (activePage === 'materias')   { typeof renderMaterias  === 'function' && renderMaterias(); }
+  async deleteMessage(messageId) {
+    const { error } = await SS.client.from('social_messages').delete().eq('id', messageId);
+    if (error) throw error;
+  },
 
-          _showSync('✓ Sincronizado', 'success');
-        }
-      } catch (err) {
-        console.error('❌ Error en sync:', err);
-      }
-    },
+  // ── Notas compartidas ────────────────────────────────────────
 
-    async load() {
-      if (!this._ready) return null;
-      try {
-        const client = window.Auth.getClient();
+  async getNotes(groupId) {
+    const { data, error } = await SS.client
+      .from('social_notes')
+      .select('*, social_profiles!social_notes_created_by_fkey(username)')
+      .eq('group_id', groupId)
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
 
-        const [semRes, setRes] = await Promise.all([
-          client.from('user_semestres').select('data').eq('user_id', this._userId).single(),
-          client.from('user_settings').select('data').eq('user_id', this._userId).single(),
-        ]);
+  async createNote(groupId, userId, title = 'Nueva nota') {
+    const { data, error } = await SS.client
+      .from('social_notes')
+      .insert({ group_id: groupId, created_by: userId, updated_by: userId, title })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-        if (semRes.error && semRes.error.code !== 'PGRST116') throw semRes.error;
-        if (setRes.error && setRes.error.code !== 'PGRST116') throw setRes.error;
+  async updateNote(noteId, updates, userId) {
+    const { data, error } = await SS.client
+      .from('social_notes')
+      .update({ ...updates, updated_by: userId, updated_at: new Date().toISOString() })
+      .eq('id', noteId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-        console.log('✅ Datos cargados desde Supabase');
-        return {
-          semestres: semRes.data?.data || [],
-          settings:  setRes.data?.data || {},
-        };
-      } catch (err) {
-        console.error('❌ Error cargando datos:', err);
-        return null;
-      }
-    },
+  async deleteNote(noteId) {
+    const { error } = await SS.client.from('social_notes').delete().eq('id', noteId);
+    if (error) throw error;
+  },
 
-    save(semestres, settings) {
-      if (!this._ready) return;
-      clearTimeout(_saveTimer);
-      _showSync('Guardando...', 'saving');
-      _saveTimer = setTimeout(() => this._doSave(semestres, settings), 800);
-    },
+  // ── Historial de notas ───────────────────────────────────────
 
-    async saveNow(semestres, settings) {
-      if (!this._ready) return;
-      clearTimeout(_saveTimer);
-      await this._doSave(semestres, settings);
-    },
+  async saveNoteHistory(noteId, groupId, userId, snapshot, description) {
+    const { error } = await SS.client.from('social_note_history').insert({
+      note_id: noteId,
+      group_id: groupId,
+      user_id: userId,
+      snapshot,
+      description: description || 'Editó la nota'
+    });
+    if (error) console.warn('Error guardando historial:', error);
+  },
 
-    async _doSave(semestres, settings) {
-      try {
-        const client = window.Auth.getClient();
+  async getNoteHistory(noteId) {
+    const { data, error } = await SS.client
+      .from('social_note_history')
+      .select('*, social_profiles(username, avatar_url)')
+      .eq('note_id', noteId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return data;
+  },
 
-        const [semRes, setRes] = await Promise.all([
-          client.from('user_semestres').upsert({ user_id: this._userId, data: semestres }, { onConflict: 'user_id' }),
-          client.from('user_settings').upsert({ user_id: this._userId, data: settings  }, { onConflict: 'user_id' }),
-        ]);
+  async getAllGroupHistory(groupId) {
+    const { data, error } = await SS.client
+      .from('social_note_history')
+      .select('*, social_profiles(username, avatar_url), social_notes(title)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false })
+      .limit(80);
+    if (error) throw error;
+    return data;
+  },
 
-        if (semRes.error) throw semRes.error;
-        if (setRes.error) throw setRes.error;
+  // ── Tareas ───────────────────────────────────────────────────
 
-        _showSync('✓ Guardado', 'success');
-        console.log('✅ Datos guardados en Supabase');
+  async getTasks(groupId) {
+    const { data, error } = await SS.client
+      .from('social_tasks')
+      .select('*, assigned:social_profiles!social_tasks_assigned_to_fkey(username, avatar_url), creator:social_profiles!social_tasks_created_by_fkey(username)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
 
-      } catch (err) {
-        console.error('❌ Error guardando:', err);
-        _showSync('Error al guardar', 'error');
-        try {
-          localStorage.setItem('academia_v4_semestres', JSON.stringify(semestres));
-          localStorage.setItem('academia_v3_settings',  JSON.stringify(settings));
-          console.warn('⚠️ Guardado en localStorage como fallback');
-        } catch (e) {}
-      }
-    },
+  async createTask(groupId, userId, task) {
+    const { data, error } = await SS.client
+      .from('social_tasks')
+      .insert({ group_id: groupId, created_by: userId, ...task })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-    // ── Historial (deshacer cambios) ───────────────────────────
-    async saveHistory(description = 'Cambio manual') {
-      if (!this._ready) return;
-      try {
-        const client = window.Auth.getClient();
-        await client.from('user_history').insert({
-          user_id:     this._userId,
-          snapshot:    { semestres: State.semestres || [], settings: State.settings || {}, savedAt: new Date().toISOString() },
-          description,
-        });
-        console.log('📸 Snapshot guardado en historial');
-      } catch (err) {
-        console.warn('⚠️ No se pudo guardar historial:', err);
-      }
-    },
+  async updateTask(taskId, updates) {
+    const { data, error } = await SS.client
+      .from('social_tasks')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', taskId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-    async getHistory() {
-      if (!this._ready) return [];
-      try {
-        const client = window.Auth.getClient();
-        const { data, error } = await client
-          .from('user_history')
-          .select('id, description, created_at, snapshot')
-          .eq('user_id', this._userId)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        console.error('❌ Error cargando historial:', err);
-        return [];
-      }
-    },
+  async deleteTask(taskId) {
+    const { error } = await SS.client.from('social_tasks').delete().eq('id', taskId);
+    if (error) throw error;
+  },
 
-    async restoreFromHistory(historyId) {
-      if (!this._ready) return false;
-      try {
-        const client = window.Auth.getClient();
-        const { data, error } = await client
-          .from('user_history')
-          .select('snapshot')
-          .eq('id', historyId)
-          .eq('user_id', this._userId)
+  // ── Archivos ─────────────────────────────────────────────────
+
+  async getFiles(groupId) {
+    const { data, error } = await SS.client
+      .from('social_files')
+      .select('*, social_profiles(username, avatar_url)')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async uploadFile(groupId, userId, file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const data64 = e.target.result;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const fileType = ['pdf'].includes(ext) ? 'pdf' : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'image' : 'file';
+
+        const { data, error } = await SS.client
+          .from('social_files')
+          .insert({
+            group_id: groupId,
+            user_id: userId,
+            uploaded_by: userId,
+            name: file.name,
+            file_type: fileType,
+            data: data64,
+            size: file.size
+          })
+          .select()
           .single();
-        if (error) throw error;
-        if (!data?.snapshot) return false;
+        if (error) reject(error);
+        else resolve(data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
 
-        await this.saveHistory('Antes de restaurar');
-        await this._doSave(data.snapshot.semestres || [], data.snapshot.settings || {});
-        State.semestres = data.snapshot.semestres || [];
-        Object.assign(State.settings, data.snapshot.settings || {});
-        console.log('✅ Datos restaurados desde historial');
-        return true;
-      } catch (err) {
-        console.error('❌ Error restaurando:', err);
-        return false;
-      }
-    },
-  };
+  async deleteFile(fileId) {
+    const { error } = await SS.client.from('social_files').delete().eq('id', fileId);
+    if (error) throw error;
+  },
 
-  window.DB = DB;
-  console.log('📦 DB module loaded - window.DB ready (v2)');
+  // ── Realtime subscriptions ───────────────────────────────────
 
-})();
+  subscribeMessages(groupId, onInsert, onDelete) {
+    return SS.client
+      .channel(`messages:${groupId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'social_messages',
+        filter: `group_id=eq.${groupId}`
+      }, onInsert)
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'social_messages',
+        filter: `group_id=eq.${groupId}`
+      }, onDelete)
+      .subscribe();
+  },
+
+  subscribeNotes(groupId, callback) {
+    return SS.client
+      .channel(`notes:${groupId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'social_notes',
+        filter: `group_id=eq.${groupId}`
+      }, callback)
+      .subscribe();
+  },
+
+  subscribeTasks(groupId, callback) {
+    return SS.client
+      .channel(`tasks:${groupId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'social_tasks',
+        filter: `group_id=eq.${groupId}`
+      }, callback)
+      .subscribe();
+  },
+
+  unsubscribe(channel) {
+    if (channel) SS.client.removeChannel(channel);
+  }
+};
+
+window.SS.DB = DB;
