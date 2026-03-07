@@ -629,7 +629,7 @@
                 </label>
                 <label class="btn btn-ghost btn-sm" title="Ver PDF completo en notas" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
                   📑 Ver PDF
-                  <input type="file" accept=".pdf" style="display:none;" onchange="loadPDFIntoNotes(this.files[0]);this.value=''">
+                  <input type="file" accept=".pdf" multiple style="display:none;" onchange="loadPDFIntoNotes(this.files);this.value=''">
                 </label>
                 <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️</button>
               </div>
@@ -1110,42 +1110,24 @@
      MOBILE BOTTOM NAV
 ══════════════════════════════════════════════════ -->
 <nav class="mobile-nav" style="display:none;">
-  <div class="mobile-nav-item active" onclick="goPage('overview',this)" data-page="overview">
+  <div class="mobile-nav-item active" onclick="goPage('overview',this)">
     <div class="mn-icon">🏠</div><div>Inicio</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('tareas',this)" data-page="tareas">
+  <div class="mobile-nav-item" onclick="goPage('tareas',this)">
     <div class="mn-icon" style="position:relative;">✅<span class="mobile-nav-badge" id="badge-tasks-m">0</span></div>
     <div>Tareas</div>
   </div>
-  <div class="mobile-nav-item mn-add-btn" onclick="openQuickAdd()">
-    <div class="mn-icon">⚡</div>
+  <div class="mobile-nav-item" onclick="openQuickAdd()">
+    <div class="mn-icon" style="font-size:26px;">⚡</div>
     <div>Agregar</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('notas',this)" data-page="notas">
-    <div class="mn-icon">📝</div><div>Notas</div>
+  <div class="mobile-nav-item" onclick="goPage('calificaciones',this)">
+    <div class="mn-icon">🎯</div><div>Notas</div>
   </div>
-  <div class="mobile-nav-item" onclick="toggleMobileMenu()" id="mn-more-btn">
-    <div class="mn-icon">☰</div><div>Más</div>
+  <div class="mobile-nav-item" onclick="goPage('calendario',this)">
+    <div class="mn-icon">📅</div><div>Agenda</div>
   </div>
 </nav>
-
-<!-- Mobile "Más" menu -->
-<div id="mobile-more-menu" style="display:none;">
-  <div class="mm-overlay" onclick="closeMobileMenu()"></div>
-  <div class="mm-sheet">
-    <div class="mm-title">Más opciones</div>
-    <div class="mm-grid">
-      <div class="mm-item" onclick="goPageMM('calificaciones')"><span>🎯</span>Calificaciones</div>
-      <div class="mm-item" onclick="goPageMM('calendario')"><span>📅</span>Agenda</div>
-      <div class="mm-item" onclick="goPageMM('pomodoro')"><span>⏱️</span>Pomodoro</div>
-      <div class="mm-item" onclick="goPageMM('materias')"><span>📚</span>Materias</div>
-      <div class="mm-item" onclick="goPageMM('horario')"><span>🗓️</span>Horario</div>
-      <div class="mm-item" onclick="goPageMM('general')"><span>🧰</span>General</div>
-      <div class="mm-item" onclick="goPageMM('semestres')"><span>🗂️</span>Semestres</div>
-      <div class="mm-item" onclick="goPageMM('perfil')"><span>👤</span>Mi Perfil</div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════════
      MODALS
@@ -1946,161 +1928,6 @@
           .catch(e => console.log('SW (solo funciona en Netlify):', e));
       });
     }
-  </script>
-
-  <style>
-  /* ── Mobile More Menu ── */
-  .mm-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.6);
-    z-index: 299; backdrop-filter: blur(2px);
-  }
-  .mm-sheet {
-    position: fixed; bottom: 70px; left: 12px; right: 12px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; z-index: 300; padding: 16px;
-    box-shadow: 0 -8px 32px rgba(0,0,0,.4);
-    animation: mmSlideUp .2s ease;
-  }
-  @keyframes mmSlideUp {
-    from { opacity:0; transform: translateY(20px); }
-    to   { opacity:1; transform: translateY(0); }
-  }
-  .mm-title {
-    font-size: 11px; font-family: 'Space Mono', monospace;
-    color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .mm-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  }
-  .mm-item {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 10px 4px; border-radius: 10px; cursor: pointer;
-    background: var(--surface2); border: 1px solid var(--border);
-    font-size: 10px; font-weight: 600; color: var(--text2);
-    transition: background .15s, color .15s;
-  }
-  .mm-item:active { background: var(--accent-glow); color: var(--accent); }
-  .mm-item span { font-size: 22px; }
-
-  /* ── Mobile nav add button ── */
-  .mn-add-btn {
-    background: var(--accent) !important;
-    border-radius: 14px !important;
-    color: white !important;
-    padding: 6px 14px !important;
-    margin: 0 2px;
-  }
-  .mn-add-btn .mn-icon { color: white !important; }
-
-  /* ── Zoom fix en inputs mobile ── */
-  @media (max-width: 768px) {
-    input, select, textarea {
-      font-size: 16px !important;
-    }
-    .form-input, .form-select, .form-textarea {
-      font-size: 16px !important;
-    }
-  }
-  </style>
-
-  <script>
-  function toggleMobileMenu() {
-    const m = document.getElementById('mobile-more-menu');
-    m.style.display = m.style.display === 'none' ? 'block' : 'none';
-  }
-  function closeMobileMenu() {
-    document.getElementById('mobile-more-menu').style.display = 'none';
-  }
-  function goPageMM(page) {
-    closeMobileMenu();
-    const navItem = document.querySelector(`[data-page="${page}"]`) ||
-                    document.querySelector(`.nav-item[onclick*="${page}"]`);
-    goPage(page, navItem);
-    // Actualizar active en barra
-    document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
-  }
-  </script>
-
-  <!-- Pull-to-refresh indicator -->
-  <div id="pull-to-refresh-indicator" style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 0;
-    background: linear-gradient(to bottom, rgba(124, 106, 255, 0.1), transparent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    transition: height 0.3s ease;
-    z-index: 100;
-  ">
-    <div style="text-align: center;">
-      <div id="pull-indicator-icon" style="font-size: 24px; transition: transform 0.3s;">⬇️</div>
-      <div id="pull-indicator-text" style="font-size: 12px; color: #7c6aff; margin-top: 4px;">Desliza para actualizar</div>
-    </div>
-  </div>
-
-  <script>
-  // ════════════════════════════════════════════════════════════════
-  // PULL-TO-REFRESH HANDLER
-  // ════════════════════════════════════════════════════════════════
-  let pullStartY = 0;
-  let isPulling = false;
-  let pullDistance = 0;
-
-  const PTR_THRESHOLD = 80;
-  const indicator = document.getElementById('pull-to-refresh-indicator');
-  const indicatorIcon = document.getElementById('pull-indicator-icon');
-  const indicatorText = document.getElementById('pull-indicator-text');
-
-  document.addEventListener('touchstart', (e) => {
-    if (window.scrollY === 0) {
-      pullStartY = e.touches[0].clientY;
-      isPulling = true;
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!isPulling) return;
-    pullDistance = e.touches[0].clientY - pullStartY;
-    if (pullDistance < 0) {
-      isPulling = false;
-      return;
-    }
-    indicator.style.height = Math.min(pullDistance, PTR_THRESHOLD) + 'px';
-    if (pullDistance >= PTR_THRESHOLD) {
-      indicatorIcon.textContent = '⬆️';
-      indicatorIcon.style.transform = 'rotate(180deg)';
-      indicatorText.textContent = '¡Suelta para actualizar!';
-    } else {
-      indicatorIcon.textContent = '⬇️';
-      indicatorIcon.style.transform = 'rotate(0deg)';
-      indicatorText.textContent = 'Desliza para actualizar';
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchend', async (e) => {
-    if (!isPulling) return;
-    isPulling = false;
-    if (pullDistance >= PTR_THRESHOLD) {
-      indicator.style.height = PTR_THRESHOLD + 'px';
-      indicatorIcon.textContent = '⚡';
-      indicatorText.textContent = 'Actualizando...';
-      if (window.DB && window.DB._syncFromSupabase) {
-        await window.DB._syncFromSupabase();
-      }
-      setTimeout(() => {
-        indicator.style.height = '0px';
-        pullDistance = 0;
-      }, 1000);
-    } else {
-      indicator.style.height = '0px';
-      pullDistance = 0;
-    }
-  });
   </script>
 
 </body>
