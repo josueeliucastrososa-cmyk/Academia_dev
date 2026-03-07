@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d14">
+  <title>StudySpace</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── Sidebar overlay (mobile) ── -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <!-- Logo -->
+      <div class="app-logo">
+        <div class="app-logo-icon">📚</div>
+        Study<span>Space</span>
+      </div>
+
+      <!-- Group switcher -->
+      <div class="group-switcher" id="group-switcher" onclick="toggleGroupDropdown()">
+        <div class="group-switcher-label">GRUPO ACTIVO</div>
+        <div class="group-switcher-name">
+          <span id="active-group-name">—</span>
+          <span style="font-size:10px;color:var(--text3);">▾</span>
+        </div>
+        <!-- Dropdown -->
+        <div class="group-dropdown" id="group-dropdown">
+          <div id="group-list"></div>
+          <div class="group-dd-item new" onclick="event.stopPropagation();openCreateGroup()">
+            ➕ Crear nuevo grupo
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">Principal</div>
+        <div class="nav-item active" data-page="chat" onclick="switchPage('chat')">
+          <span class="nav-icon">💬</span> Chat
+          <span class="nav-badge" id="badge-chat" style="display:none;">0</span>
+        </div>
+        <div class="nav-item" data-page="notes" onclick="switchPage('notes')">
+          <span class="nav-icon">📝</span> Notas compartidas
+        </div>
+        <div class="nav-item" data-page="tasks" onclick="switchPage('tasks')">
+          <span class="nav-icon">✅</span> Tareas del grupo
+          <span class="nav-badge" id="badge-tasks" style="display:none;">0</span>
+        </div>
+        <div class="nav-item" data-page="files" onclick="switchPage('files')">
+          <span class="nav-icon">📁</span> Archivos & PDFs
+        </div>
+        <div class="nav-item" data-page="history" onclick="switchPage('history')">
+          <span class="nav-icon">🕐</span> Historial
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Grupo</div>
+        <div class="nav-item" onclick="openInviteModal()">
+          <span class="nav-icon">🔗</span> Invitar personas
+        </div>
+        <div class="nav-item" onclick="openMembersModal()">
+          <span class="nav-icon">👥</span> Miembros
+          <span style="margin-left:auto;font-size:11px;color:var(--text3);" id="members-count">—</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- User chip -->
+    <div class="sidebar-bottom">
+      <div class="user-chip" onclick="openUserMenu()">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div>
+          <div class="user-name" id="user-name">Cargando...</div>
+          <div class="user-role" id="user-role">Miembro</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+      <div>
+        <div class="topbar-title" id="topbar-title">💬 Chat</div>
+        <div class="topbar-subtitle" id="topbar-subtitle">Cargando grupo...</div>
+      </div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+
+    <!-- ═══ PAGES ═══ -->
+    <div class="pages">
+
+      <!-- ── CHAT ── -->
+      <div class="page active chat-layout" id="page-chat">
+        <div class="chat-messages" id="chat-messages">
+          <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <div class="empty-state-title">Cargando mensajes...</div>
+          </div>
+        </div>
+        <div class="chat-input-wrap">
+          <textarea
+            class="chat-input"
+            id="chat-input"
+            placeholder="Escribe un mensaje..."
+            rows="1"
+            onkeydown="handleChatKey(event)"
+            oninput="autoResizeTextarea(this)"
+          ></textarea>
+          <button class="chat-send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+
+      <!-- ── NOTAS ── -->
+      <div class="page" id="page-notes">
+        <div class="notes-layout">
+          <!-- Sidebar de notas -->
+          <div class="notes-sidebar" id="notes-sidebar">
+            <div class="notes-sidebar-header">
+              <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="createNote()">
+                + Nueva nota
+              </button>
+            </div>
+            <div class="note-list" id="note-list">
+              <div class="empty-state" style="padding:30px 10px;">
+                <div class="empty-state-icon" style="font-size:24px;">📝</div>
+                <div class="empty-state-desc" style="font-size:11px;">Sin notas todavía</div>
+              </div>
+            </div>
+          </div>
+          <!-- Editor -->
+          <div class="note-editor" id="note-editor">
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:10px;">
+              <span style="font-size:36px;">📝</span>
+              <span style="font-size:13px;">Selecciona o crea una nota</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAREAS ── -->
+      <div class="page tasks-page" id="page-tasks">
+        <div class="tasks-header">
+          <div style="font-size:15px;font-weight:800;flex:1;">✅ Tareas del grupo</div>
+          <button class="btn btn-primary btn-sm" onclick="openCreateTask()">+ Nueva tarea</button>
+        </div>
+        <div class="tasks-list" id="tasks-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <div class="empty-state-title">Sin tareas</div>
+            <div class="empty-state-desc">Crea la primera tarea del grupo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ARCHIVOS ── -->
+      <div class="page files-page" id="page-files">
+        <div class="files-header">
+          <div style="font-size:15px;font-weight:800;flex:1;">📁 Archivos & PDFs</div>
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('file-input').click()">
+            ⬆ Subir archivo
+          </button>
+          <input type="file" id="file-input" style="display:none;" multiple onchange="handleFileUpload(event)">
+        </div>
+        <div class="files-grid" id="files-grid">
+          <div class="upload-zone" id="upload-zone"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="handleFileDrop(event)">
+            <div class="upload-zone-icon">📂</div>
+            <div class="upload-zone-text">Arrastra archivos aquí o haz clic</div>
+            <div class="upload-zone-sub">PDF, imágenes, documentos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORIAL ── -->
+      <div class="page history-page" id="page-history">
+        <div class="history-header">
+          <div style="font-size:15px;font-weight:800;flex:1;">🕐 Historial de cambios</div>
+          <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">Últimos 80 cambios</span>
+        </div>
+        <div class="history-list" id="history-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">🕐</div>
+            <div class="empty-state-title">Sin historial</div>
+            <div class="empty-state-desc">Los cambios en notas aparecerán aquí</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODALES ═══ -->
+
+<!-- Crear grupo -->
+<div class="modal-overlay" id="modal-create-group">
+  <div class="modal-box">
+    <div class="modal-title">🏫 Crear nuevo grupo</div>
+    <div class="form-group">
+      <label class="form-label">NOMBRE DEL GRUPO</label>
+      <input class="form-input" id="new-group-name" placeholder="Ej: Cálculo 2 — Sección A" maxlength="60">
+    </div>
+    <div class="form-group">
+      <label class="form-label">DESCRIPCIÓN (opcional)</label>
+      <input class="form-input" id="new-group-desc" placeholder="Ej: Grupo de estudio para el parcial">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-create-group')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmCreateGroup()">Crear grupo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invitar personas -->
+<div class="modal-overlay" id="modal-invite">
+  <div class="modal-box">
+    <div class="modal-title">🔗 Invitar al grupo</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+      Comparte este link — quien lo abra se unirá automáticamente al grupo.
+    </p>
+    <div class="invite-link-box">
+      <span class="invite-link-url" id="invite-link-url">—</span>
+      <button class="btn btn-xs btn-ghost" onclick="copyInviteLink()">📋 Copiar</button>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
+      <div style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:6px;">CÓDIGO DIRECTO</div>
+      <div style="font-size:22px;font-weight:900;font-family:'Space Mono',monospace;color:var(--accent2);letter-spacing:4px;" id="invite-code-display">—</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-invite')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Miembros -->
+<div class="modal-overlay" id="modal-members">
+  <div class="modal-box">
+    <div class="modal-title">👥 Miembros del grupo</div>
+    <div id="members-list" style="max-height:300px;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-members')">Cerrar</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmLeaveGroup()">🚪 Salir del grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Crear tarea -->
+<div class="modal-overlay" id="modal-create-task">
+  <div class="modal-box">
+    <div class="modal-title">✅ Nueva tarea</div>
+    <div class="form-group">
+      <label class="form-label">TÍTULO</label>
+      <input class="form-input" id="task-title" placeholder="¿Qué hay que hacer?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">NOTAS (opcional)</label>
+      <textarea class="form-textarea" id="task-notes" placeholder="Detalles..."></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label class="form-label">PRIORIDAD</label>
+        <select class="form-select" id="task-priority">
+          <option value="high">🔴 Alta</option>
+          <option value="med" selected>🟡 Media</option>
+          <option value="low">🟢 Baja</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">FECHA LÍMITE</label>
+        <input class="form-input" id="task-due" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ASIGNAR A</label>
+      <select class="form-select" id="task-assigned">
+        <option value="">Sin asignar</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-create-task')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmCreateTask()">Crear tarea →</button>
+    </div>
+  </div>
+</div>
+
+<!-- User menu -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal-box" style="max-width:320px;">
+    <div style="text-align:center;padding:10px 0 20px;">
+      <div style="font-size:40px;margin-bottom:8px;" id="user-menu-avatar">👤</div>
+      <div style="font-size:16px;font-weight:800;" id="user-menu-name">—</div>
+      <div style="font-size:12px;color:var(--text3);" id="user-menu-email">—</div>
+    </div>
+    <button class="btn btn-danger" style="width:100%;justify-content:center;" onclick="ssSignOut()">
+      🚪 Cerrar sesión
+    </button>
+    <div class="modal-actions" style="justify-content:center;margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-user')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/db.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STUDYSPACE — app.js (inline)
+// ═══════════════════════════════════════════════════════════════
+
+let _user       = null;
+let _profile    = null;
+let _groups     = [];
+let _activeGroup = null;
+let _members    = [];
+let _currentPage = 'chat';
+
+// Realtime channels
+let _chatChannel  = null;
+let _notesChannel = null;
+let _tasksChannel = null;
+
+// Notes state
+let _notes        = [];
+let _activeNoteId = null;
+let _noteTimer    = null;
+
+// ── INIT ────────────────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await SS.client.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  _user = session.user;
+
+  // Manejar invite pendiente (de sessionStorage tras login)
+  const pendingInvite = sessionStorage.getItem('ss_pending_invite');
+  if (pendingInvite) {
+    sessionStorage.removeItem('ss_pending_invite');
+    await _joinGroupByCode(pendingInvite);
+  }
+
+  // Upsert perfil
+  _profile = await ssUpsertProfile(_user.id, {
+    name: _user.user_metadata?.full_name || _user.user_metadata?.name,
+    avatar_url: _user.user_metadata?.avatar_url || _user.user_metadata?.picture,
+    email: _user.email
+  });
+
+  // Actualizar UI de usuario
+  const name = _profile?.username || _user.email;
+  document.getElementById('user-name').textContent = name;
+  document.getElementById('user-menu-name').textContent = name;
+  document.getElementById('user-menu-email').textContent = _user.email;
+  const avatarEl = document.getElementById('user-avatar');
+  if (_profile?.avatar_url) {
+    avatarEl.innerHTML = `<img src="${_profile.avatar_url}" alt="avatar">`;
+    document.getElementById('user-menu-avatar').innerHTML = `<img src="${_profile.avatar_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">`;
+  } else {
+    avatarEl.textContent = name.charAt(0).toUpperCase();
+  }
+
+  // Cargar grupos
+  await _loadGroups();
+})();
+
+// ── GRUPOS ──────────────────────────────────────────────────────
+
+async function _loadGroups() {
+  try {
+    _groups = await SS.DB.getMyGroups(_user.id);
+    _renderGroupDropdown();
+
+    if (_groups.length === 0) {
+      // Sin grupos — mostrar prompt para crear/unirse
+      document.getElementById('active-group-name').textContent = 'Sin grupos';
+      _showNoGroupState();
+      return;
+    }
+
+    // Activar primer grupo
+    await _setActiveGroup(_groups[0]);
+  } catch(e) {
+    console.error(e);
+    showToast('Error cargando grupos', 'error');
+  }
+}
+
+function _renderGroupDropdown() {
+  const list = document.getElementById('group-list');
+  list.innerHTML = _groups.map(g => `
+    <div class="group-dd-item ${_activeGroup?.id === g.id ? 'active' : ''}"
+         onclick="event.stopPropagation();_setActiveGroup(${JSON.stringify(g).replace(/"/g,"'")});closeGroupDropdown()">
+      📂 ${_esc(g.name)}
+    </div>
+  `).join('');
+}
+
+async function _setActiveGroup(group) {
+  // Unsubscribe de canales anteriores
+  SS.DB.unsubscribe(_chatChannel);
+  SS.DB.unsubscribe(_notesChannel);
+  SS.DB.unsubscribe(_tasksChannel);
+
+  _activeGroup = group;
+  document.getElementById('active-group-name').textContent = group.name;
+  document.getElementById('topbar-subtitle').textContent = group.name;
+  document.getElementById('user-role').textContent = group.myRole === 'admin' ? '👑 Admin' : 'Miembro';
+
+  // Cargar miembros
+  _members = await SS.DB.getGroupMembers(group.id);
+  document.getElementById('members-count').textContent = _members.length;
+
+  // Suscribirse a realtime
+  _chatChannel  = SS.DB.subscribeMessages(group.id, _onNewMessage, _onDeleteMessage);
+  _notesChannel = SS.DB.subscribeNotes(group.id, _onNoteChange);
+  _tasksChannel = SS.DB.subscribeTasks(group.id, _onTaskChange);
+
+  // Cargar página activa
+  await _loadCurrentPage();
+  _renderGroupDropdown();
+}
+
+function _showNoGroupState() {
+  document.getElementById('chat-messages').innerHTML = `
+    <div class="empty-state" style="flex:1;">
+      <div class="empty-state-icon">🏫</div>
+      <div class="empty-state-title">No perteneces a ningún grupo</div>
+      <div class="empty-state-desc">Crea un grupo o pide un link de invitación a tu equipo</div>
+      <button class="btn btn-primary" style="margin-top:16px;" onclick="openCreateGroup()">
+        ➕ Crear primer grupo
+      </button>
+    </div>
+  `;
+}
+
+function toggleGroupDropdown() {
+  document.getElementById('group-dropdown').classList.toggle('open');
+}
+function closeGroupDropdown() {
+  document.getElementById('group-dropdown').classList.remove('open');
+}
+
+async function openCreateGroup() {
+  closeGroupDropdown();
+  closeModal('modal-user');
+  document.getElementById('new-group-name').value = '';
+  document.getElementById('new-group-desc').value = '';
+  openModal('modal-create-group');
+}
+
+async function confirmCreateGroup() {
+  const name = document.getElementById('new-group-name').value.trim();
+  if (!name) { showToast('Ingresa un nombre', 'error'); return; }
+  const desc = document.getElementById('new-group-desc').value.trim();
+
+  try {
+    const group = await SS.DB.createGroup(name, desc, _user.id);
+    group.myRole = 'admin';
+    _groups.unshift(group);
+    await _setActiveGroup(group);
+    closeModal('modal-create-group');
+    showToast('¡Grupo creado!', 'success');
+  } catch(e) {
+    console.error(e);
+    showToast('Error creando el grupo', 'error');
+  }
+}
+
+async function _joinGroupByCode(code) {
+  try {
+    const { data: group } = await SS.client
+      .from('social_groups')
+      .select('id, name')
+      .eq('invite_code', code.toLowerCase())
+      .single();
+    if (!group) return;
+    await SS.client.from('social_members').upsert(
+      { group_id: group.id, user_id: _user.id, role: 'member' },
+      { onConflict: 'group_id,user_id' }
+    );
+    showToast(`¡Te uniste a "${group.name}"!`, 'success');
+  } catch(e) {}
+}
+
+// ── CHAT ────────────────────────────────────────────────────────
+
+async function _loadChat() {
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = '<div class="empty-state"><div class="spinner spinner-lg"></div></div>';
+
+  try {
+    const messages = await SS.DB.getMessages(_activeGroup.id);
+    _renderMessages(messages);
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-title">Error cargando mensajes</div></div>';
+  }
+}
+
+function _renderMessages(messages) {
+  const container = document.getElementById('chat-messages');
+  if (!messages.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <div class="empty-state-title">Sé el primero en escribir</div>
+        <div class="empty-state-desc">Los mensajes aparecen en tiempo real para todos los miembros</div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  let lastDate = '';
+  let lastUser = '';
+
+  messages.forEach(msg => {
+    const date = new Date(msg.created_at);
+    const dateStr = date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'short' });
+    if (dateStr !== lastDate) {
+      html += `<div class="chat-day-divider">${dateStr}</div>`;
+      lastDate = dateStr;
+      lastUser = '';
+    }
+
+    const isMine = msg.user_id === _user.id;
+    const username = msg.social_profiles?.username || 'Usuario';
+    const avatar   = msg.social_profiles?.avatar_url;
+    const time     = date.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+    const showMeta = lastUser !== msg.user_id;
+    lastUser = msg.user_id;
+
+    const avatarHtml = avatar
+      ? `<img src="${avatar}" alt="">`
+      : `<span>${username.charAt(0).toUpperCase()}</span>`;
+
+    html += `
+      <div class="msg ${isMine ? 'mine' : 'theirs'}" id="msg-${msg.id}">
+        ${!isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+        <div>
+          ${showMeta ? `<div class="msg-meta">${isMine ? time : username + ' · ' + time}</div>` : ''}
+          <div class="msg-bubble" ondblclick="${isMine ? `deleteMsg('${msg.id}')` : ''}"
+               title="${isMine ? 'Doble clic para borrar' : ''}">
+            ${_escHtml(msg.content)}
+          </div>
+        </div>
+        ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function _onNewMessage(payload) {
+  const msg = payload.new;
+  // Buscar perfil del sender en _members
+  const member = _members.find(m => m.id === msg.user_id);
+  if (member) {
+    msg.social_profiles = { username: member.username, avatar_url: member.avatar_url };
+  }
+  _appendMessage(msg);
+}
+
+function _appendMessage(msg) {
+  const container = document.getElementById('chat-messages');
+  // Quitar empty state si existe
+  container.querySelector('.empty-state')?.remove();
+
+  const isMine   = msg.user_id === _user.id;
+  const username = msg.social_profiles?.username || 'Usuario';
+  const avatar   = msg.social_profiles?.avatar_url;
+  const time     = new Date(msg.created_at).toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+  const avatarHtml = avatar ? `<img src="${avatar}" alt="">` : `<span>${username.charAt(0).toUpperCase()}</span>`;
+
+  const div = document.createElement('div');
+  div.id = `msg-${msg.id}`;
+  div.className = `msg ${isMine ? 'mine' : 'theirs'}`;
+  div.innerHTML = `
+    ${!isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+    <div>
+      <div class="msg-meta">${isMine ? time : username + ' · ' + time}</div>
+      <div class="msg-bubble" ondblclick="${isMine ? `deleteMsg('${msg.id}')` : ''}"
+           title="${isMine ? 'Doble clic para borrar' : ''}">
+        ${_escHtml(msg.content)}
+      </div>
+    </div>
+    ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function _onDeleteMessage(payload) {
+  document.getElementById(`msg-${payload.old.id}`)?.remove();
+}
+
+async function sendMessage() {
+  if (!_activeGroup) return;
+  const input = document.getElementById('chat-input');
+  const content = input.value.trim();
+  if (!content) return;
+
+  input.value = '';
+  input.style.height = '';
+
+  try {
+    await SS.DB.sendMessage(_activeGroup.id, _user.id, content);
+  } catch(e) {
+    showToast('Error enviando mensaje', 'error');
+    input.value = content;
+  }
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+async function deleteMsg(msgId) {
+  if (!confirm('¿Borrar este mensaje?')) return;
+  try {
+    await SS.DB.deleteMessage(msgId);
+  } catch(e) {
+    showToast('Error borrando mensaje', 'error');
+  }
+}
+
+// ── NOTAS ───────────────────────────────────────────────────────
+
+async function _loadNotes() {
+  _notes = await SS.DB.getNotes(_activeGroup.id);
+  _renderNoteList();
+  if (_notes.length > 0 && !_activeNoteId) {
+    _openNote(_notes[0]);
+  } else if (_notes.length === 0) {
+    document.getElementById('note-editor').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:10px;">
+        <span style="font-size:36px;">📝</span>
+        <span style="font-size:13px;">Crea la primera nota del grupo</span>
+      </div>`;
+  }
+}
+
+function _renderNoteList() {
+  const list = document.getElementById('note-list');
+  if (!_notes.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:30px 10px;"><div class="empty-state-icon" style="font-size:24px;">📝</div><div class="empty-state-desc" style="font-size:11px;">Sin notas todavía</div></div>`;
+    return;
+  }
+  list.innerHTML = _notes.map(n => `
+    <div class="note-list-item ${n.id === _activeNoteId ? 'active' : ''}" onclick="_openNote(${JSON.stringify(n).replace(/"/g,"'")})">
+      <div class="note-list-item-title">${_escHtml(n.title || 'Sin título')}</div>
+      <div class="note-list-item-meta">${_timeAgo(n.updated_at)}</div>
+    </div>
+  `).join('');
+}
+
+function _openNote(note) {
+  _activeNoteId = note.id;
+  _renderNoteList();
+
+  const editor = document.getElementById('note-editor');
+  editor.innerHTML = `
+    <div class="note-editor-header">
+      <input class="note-title-input" id="note-title" value="${_escAttr(note.title || '')}"
+             placeholder="Título de la nota"
+             onblur="_saveNoteTitle()"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('note-body').focus();}">
+      <button class="btn btn-danger btn-xs" onclick="_deleteNote('${note.id}')">🗑️</button>
+      <button class="btn btn-ghost btn-xs" onclick="switchPage('history')">🕐 Historial</button>
+    </div>
+    <div class="note-toolbar">
+      <button class="toolbar-btn" onclick="document.execCommand('bold')" title="Negrita"><b>B</b></button>
+      <button class="toolbar-btn" onclick="document.execCommand('italic')" title="Cursiva"><i>I</i></button>
+      <button class="toolbar-btn" onclick="document.execCommand('underline')" title="Subrayado"><u>U</u></button>
+      <button class="toolbar-btn" onclick="document.execCommand('insertUnorderedList')" title="Lista">• Lista</button>
+      <button class="toolbar-btn" onclick="document.execCommand('insertOrderedList')" title="Numerada">1. Num</button>
+      <button class="toolbar-btn" onclick="document.execCommand('formatBlock',false,'h2')" title="Título">H2</button>
+      <button class="toolbar-btn" onclick="document.execCommand('removeFormat')" title="Limpiar">✕ fmt</button>
+    </div>
+    <div class="note-content" id="note-body" contenteditable="true"
+         oninput="_onNoteInput()">${note.content || ''}</div>
+    <div class="note-footer">
+      <span id="note-status">💾 Guardado</span>
+      <span id="note-edit-info">${note.updated_by ? 'Editado por ' + (note.social_profiles?.username || 'alguien') : ''}</span>
+    </div>
+  `;
+}
+
+function _onNoteInput() {
+  document.getElementById('note-status').textContent = '⏳ Guardando...';
+  clearTimeout(_noteTimer);
+  _noteTimer = setTimeout(_saveNoteContent, 1500);
+}
+
+async function _saveNoteContent() {
+  if (!_activeNoteId) return;
+  const body = document.getElementById('note-body');
+  if (!body) return;
+  const content = body.innerHTML;
+  const note = _notes.find(n => n.id === _activeNoteId);
+  if (!note) return;
+
+  try {
+    // Guardar historial antes de actualizar
+    await SS.DB.saveNoteHistory(_activeNoteId, _activeGroup.id, _user.id, note.content || '', 'Editó el contenido');
+    // Actualizar nota
+    const updated = await SS.DB.updateNote(_activeNoteId, { content }, _user.id);
+    note.content = content;
+    note.updated_at = updated.updated_at;
+    const statusEl = document.getElementById('note-status');
+    if (statusEl) statusEl.textContent = '✅ Guardado';
+  } catch(e) {
+    const statusEl = document.getElementById('note-status');
+    if (statusEl) statusEl.textContent = '❌ Error al guardar';
+  }
+}
+
+async function _saveNoteTitle() {
+  if (!_activeNoteId) return;
+  const title = document.getElementById('note-title')?.value.trim() || 'Sin título';
+  const note = _notes.find(n => n.id === _activeNoteId);
+  if (!note || note.title === title) return;
+  await SS.DB.updateNote(_activeNoteId, { title }, _user.id);
+  note.title = title;
+  _renderNoteList();
+}
+
+async function createNote() {
+  if (!_activeGroup) return;
+  const note = await SS.DB.createNote(_activeGroup.id, _user.id);
+  _notes.unshift(note);
+  _renderNoteList();
+  _openNote(note);
+  showToast('Nota creada', 'success');
+}
+
+async function _deleteNote(noteId) {
+  if (!confirm('¿Borrar esta nota permanentemente?')) return;
+  await SS.DB.deleteNote(noteId);
+  _notes = _notes.filter(n => n.id !== noteId);
+  if (_activeNoteId === noteId) {
+    _activeNoteId = null;
+    document.getElementById('note-editor').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:10px;">
+        <span style="font-size:36px;">📝</span><span style="font-size:13px;">Selecciona o crea una nota</span>
+      </div>`;
+  }
+  _renderNoteList();
+  showToast('Nota borrada', 'info');
+}
+
+function _onNoteChange(payload) {
+  const { eventType, new: newNote, old } = payload;
+  if (eventType === 'INSERT') {
+    if (!_notes.find(n => n.id === newNote.id)) {
+      _notes.unshift(newNote);
+      _renderNoteList();
+    }
+  } else if (eventType === 'UPDATE') {
+    const idx = _notes.findIndex(n => n.id === newNote.id);
+    if (idx !== -1) _notes[idx] = { ..._notes[idx], ...newNote };
+    // Si alguien más está editando la nota activa, actualizar contenido si no está activo en el editor
+    if (newNote.id === _activeNoteId && newNote.updated_by !== _user.id) {
+      const body = document.getElementById('note-body');
+      if (body && document.activeElement !== body) {
+        body.innerHTML = newNote.content || '';
+        const statusEl = document.getElementById('note-status');
+        if (statusEl) statusEl.textContent = '🔄 Actualizado por otro usuario';
+      }
+    }
+    _renderNoteList();
+  } else if (eventType === 'DELETE') {
+    _notes = _notes.filter(n => n.id !== old.id);
+    if (_activeNoteId === old.id) {
+      _activeNoteId = null;
+      document.getElementById('note-editor').innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:10px;"><span style="font-size:36px;">📝</span><span>Esta nota fue borrada</span></div>`;
+    }
+    _renderNoteList();
+  }
+}
+
+// ── TAREAS ──────────────────────────────────────────────────────
+
+let _tasks = [];
+
+async function _loadTasks() {
+  _tasks = await SS.DB.getTasks(_activeGroup.id);
+  _renderTasks();
+  // Badge
+  const pending = _tasks.filter(t => !t.done).length;
+  const badge = document.getElementById('badge-tasks');
+  badge.textContent = pending;
+  badge.style.display = pending > 0 ? '' : 'none';
+}
+
+function _renderTasks() {
+  const list = document.getElementById('tasks-list');
+  if (!_tasks.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><div class="empty-state-title">Sin tareas</div><div class="empty-state-desc">Crea la primera tarea del grupo</div></div>`;
+    return;
+  }
+
+  const pending = _tasks.filter(t => !t.done);
+  const done    = _tasks.filter(t => t.done);
+
+  list.innerHTML = [...pending, ...done].map(t => {
+    const prioTag  = t.priority === 'high' ? 'tag-prio-high' : t.priority === 'med' ? 'tag-prio-med' : 'tag-prio-low';
+    const prioLbl  = t.priority === 'high' ? '🔴 Alta' : t.priority === 'med' ? '🟡 Media' : '🟢 Baja';
+    const isUrgent = t.due && new Date(t.due) < new Date();
+    return `
+      <div class="task-item ${t.done ? 'done' : ''}" id="task-${t.id}">
+        <div class="task-check ${t.done ? 'checked' : ''}" onclick="_toggleTask('${t.id}')"></div>
+        <div class="task-body">
+          <div class="task-title">${_escHtml(t.title)}</div>
+          <div class="task-meta">
+            <span class="task-tag ${prioTag}">${prioLbl}</span>
+            ${t.due ? `<span class="task-tag tag-due ${isUrgent ? 'urgent' : ''}">📅 ${t.due}</span>` : ''}
+            ${t.assigned?.username ? `<span class="task-tag tag-assigned">👤 ${_escHtml(t.assigned.username)}</span>` : ''}
+            ${t.creator?.username ? `<span style="font-size:10px;color:var(--text3);">por ${_escHtml(t.creator.username)}</span>` : ''}
+          </div>
+          ${t.notes ? `<div style="font-size:12px;color:var(--text2);margin-top:5px;">${_escHtml(t.notes)}</div>` : ''}
+        </div>
+        <div class="task-actions">
+          <button class="btn btn-xs btn-danger" onclick="_deleteTask('${t.id}')">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function _toggleTask(taskId) {
+  const task = _tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.done = !task.done;
+  _renderTasks();
+  try {
+    await SS.DB.updateTask(taskId, { done: task.done });
+  } catch(e) {
+    task.done = !task.done;
+    _renderTasks();
+  }
+}
+
+async function _deleteTask(taskId) {
+  if (!confirm('¿Borrar esta tarea?')) return;
+  await SS.DB.deleteTask(taskId);
+  _tasks = _tasks.filter(t => t.id !== taskId);
+  _renderTasks();
+}
+
+function _onTaskChange(payload) {
+  const { eventType, new: newTask, old } = payload;
+  if (eventType === 'INSERT') {
+    if (!_tasks.find(t => t.id === newTask.id)) _tasks.push(newTask);
+  } else if (eventType === 'UPDATE') {
+    const idx = _tasks.findIndex(t => t.id === newTask.id);
+    if (idx !== -1) _tasks[idx] = { ..._tasks[idx], ...newTask };
+  } else if (eventType === 'DELETE') {
+    _tasks = _tasks.filter(t => t.id !== old.id);
+  }
+  _renderTasks();
+}
+
+function openCreateTask() {
+  if (!_activeGroup) return;
+  document.getElementById('task-title').value = '';
+  document.getElementById('task-notes').value = '';
+  document.getElementById('task-priority').value = 'med';
+  document.getElementById('task-due').value = '';
+  // Poblar asignados
+  const sel = document.getElementById('task-assigned');
+  sel.innerHTML = '<option value="">Sin asignar</option>' +
+    _members.map(m => `<option value="${m.id}">${_escHtml(m.username || 'Usuario')}</option>`).join('');
+  openModal('modal-create-task');
+}
+
+async function confirmCreateTask() {
+  const title = document.getElementById('task-title').value.trim();
+  if (!title) { showToast('Ingresa un título', 'error'); return; }
+  const task = {
+    title,
+    notes:       document.getElementById('task-notes').value.trim() || null,
+    priority:    document.getElementById('task-priority').value,
+    due:         document.getElementById('task-due').value || null,
+    assigned_to: document.getElementById('task-assigned').value || null,
+  };
+  try {
+    const created = await SS.DB.createTask(_activeGroup.id, _user.id, task);
+    _tasks.unshift(created);
+    _renderTasks();
+    closeModal('modal-create-task');
+    showToast('Tarea creada', 'success');
+  } catch(e) {
+    showToast('Error creando la tarea', 'error');
+  }
+}
+
+// ── ARCHIVOS ─────────────────────────────────────────────────────
+
+let _files = [];
+
+async function _loadFiles() {
+  _files = await SS.DB.getFiles(_activeGroup.id);
+  _renderFiles();
+}
+
+function _renderFiles() {
+  const grid = document.getElementById('files-grid');
+  const uploadZone = `
+    <div class="upload-zone" id="upload-zone"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="handleFileDrop(event)">
+      <div class="upload-zone-icon">📂</div>
+      <div class="upload-zone-text">Arrastra archivos aquí o haz clic</div>
+      <div class="upload-zone-sub">PDF, imágenes, documentos</div>
+    </div>`;
+
+  if (!_files.length) {
+    grid.innerHTML = uploadZone;
+    return;
+  }
+
+  const fileIcon = t => t === 'pdf' ? '📑' : t === 'image' ? '🖼️' : '📄';
+  const fileSize = s => s ? (s < 1024*1024 ? Math.round(s/1024) + ' KB' : (s/1024/1024).toFixed(1) + ' MB') : '';
+
+  grid.innerHTML = uploadZone + _files.map(f => `
+    <div class="file-card" onclick="_openFile('${f.id}')">
+      <div class="file-icon">${fileIcon(f.file_type)}</div>
+      <div>
+        <div class="file-name">${_escHtml(f.name)}</div>
+        <div class="file-meta">${fileSize(f.size)} · ${_timeAgo(f.created_at)}</div>
+        <div class="file-uploader">👤 ${_escHtml(f.social_profiles?.username || 'alguien')}</div>
+      </div>
+      <button class="btn btn-xs btn-danger" onclick="event.stopPropagation();_deleteFile('${f.id}')" style="margin-top:auto;">🗑️</button>
+    </div>
+  `).join('');
+}
+
+async function handleFileUpload(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length || !_activeGroup) return;
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) { showToast(`${file.name} supera 5MB`, 'error'); continue; }
+    showToast(`Subiendo ${file.name}...`, 'info');
+    try {
+      const uploaded = await SS.DB.uploadFile(_activeGroup.id, _user.id, file);
+      _files.unshift(uploaded);
+      showToast(`${file.name} subido ✓`, 'success');
+    } catch(e) {
+      showToast(`Error subiendo ${file.name}`, 'error');
+    }
+  }
+  _renderFiles();
+  event.target.value = '';
+}
+
+function handleFileDrop(event) {
+  event.preventDefault();
+  document.getElementById('upload-zone')?.classList.remove('drag-over');
+  const files = Array.from(event.dataTransfer.files);
+  if (!files.length) return;
+  const dt = new DataTransfer();
+  files.forEach(f => dt.items.add(f));
+  document.getElementById('file-input').files = dt.files;
+  handleFileUpload({ target: document.getElementById('file-input') });
+}
+
+function _openFile(fileId) {
+  const file = _files.find(f => f.id === fileId);
+  if (!file) return;
+  // Abrir en nueva pestaña usando blob URL
+  const byteStr = atob(file.data.split(',')[1]);
+  const ab = new ArrayBuffer(byteStr.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+  const blob = new Blob([ab], { type: file.file_type === 'pdf' ? 'application/pdf' : 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+async function _deleteFile(fileId) {
+  if (!confirm('¿Borrar este archivo?')) return;
+  await SS.DB.deleteFile(fileId);
+  _files = _files.filter(f => f.id !== fileId);
+  _renderFiles();
+  showToast('Archivo borrado', 'info');
+}
+
+// ── HISTORIAL ───────────────────────────────────────────────────
+
+async function _loadHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div class="empty-state"><div class="spinner spinner-lg"></div></div>';
+  try {
+    const history = await SS.DB.getAllGroupHistory(_activeGroup.id);
+    if (!history.length) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🕐</div><div class="empty-state-title">Sin historial</div><div class="empty-state-desc">Los cambios en notas aparecerán aquí</div></div>`;
+      return;
+    }
+    list.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="history-dot"></div>
+        <div class="history-body">
+          <div class="history-title">
+            📝 ${_escHtml(h.social_notes?.title || 'Nota')}
+            <span style="font-size:11px;font-weight:400;color:var(--text3);"> — ${_escHtml(h.description || 'Editado')}</span>
+          </div>
+          <div class="history-meta">
+            <span>👤 ${_escHtml(h.social_profiles?.username || 'alguien')}</span>
+            <span>${_timeAgo(h.created_at)}</span>
+          </div>
+        </div>
+        <div class="history-actions">
+          <button class="btn btn-xs btn-ghost" onclick="_restoreSnapshot('${h.id}','${h.note_id}',this)" title="Restaurar esta versión">↩️</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-title">Error cargando historial</div></div>';
+  }
+}
+
+async function _restoreSnapshot(historyId, noteId, btn) {
+  if (!confirm('¿Restaurar esta versión de la nota? Se sobreescribirá el contenido actual.')) return;
+  const { data: h } = await SS.client.from('social_note_history').select('snapshot').eq('id', historyId).single();
+  if (!h) return;
+  await SS.DB.updateNote(noteId, { content: h.snapshot }, _user.id);
+  const note = _notes.find(n => n.id === noteId);
+  if (note) note.content = h.snapshot;
+  if (_activeNoteId === noteId) {
+    const body = document.getElementById('note-body');
+    if (body) body.innerHTML = h.snapshot;
+  }
+  showToast('Versión restaurada ✓', 'success');
+}
+
+// ── MODALES ─────────────────────────────────────────────────────
+
+function openInviteModal() {
+  if (!_activeGroup) return;
+  const base = window.location.origin + window.location.pathname.replace('app.html', '');
+  const link = `${base}index.html?invite=${_activeGroup.invite_code}`;
+  document.getElementById('invite-link-url').textContent = link;
+  document.getElementById('invite-code-display').textContent = _activeGroup.invite_code.toUpperCase();
+  openModal('modal-invite');
+}
+
+function copyInviteLink() {
+  const url = document.getElementById('invite-link-url').textContent;
+  navigator.clipboard.writeText(url).then(() => showToast('¡Link copiado!', 'success'));
+}
+
+async function openMembersModal() {
+  const list = document.getElementById('members-list');
+  list.innerHTML = _members.map(m => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);">
+      <div class="user-avatar" style="width:32px;height:32px;font-size:13px;">
+        ${m.avatar_url ? `<img src="${m.avatar_url}">` : m.username?.charAt(0).toUpperCase() || '?'}
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;">${_escHtml(m.username || 'Usuario')}</div>
+        <div style="font-size:10px;color:var(--text3);">${m.role === 'admin' ? '👑 Admin' : 'Miembro'}</div>
+      </div>
+    </div>
+  `).join('');
+  openModal('modal-members');
+}
+
+async function confirmLeaveGroup() {
+  if (!confirm(`¿Salir del grupo "${_activeGroup.name}"?`)) return;
+  await SS.DB.leaveGroup(_activeGroup.id, _user.id);
+  closeModal('modal-members');
+  await _loadGroups();
+  showToast('Saliste del grupo', 'info');
+}
+
+function openUserMenu() { openModal('modal-user'); }
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ── SIDEBAR MOBILE ───────────────────────────────────────────────
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('visible');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+}
+
+// ── NAVEGACIÓN ───────────────────────────────────────────────────
+
+async function switchPage(page) {
+  _currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`)?.classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  closeSidebar();
+
+  const titles = { chat:'💬 Chat', notes:'📝 Notas compartidas', tasks:'✅ Tareas', files:'📁 Archivos', history:'🕐 Historial' };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+
+  // Acciones del topbar por página
+  const actions = document.getElementById('topbar-actions');
+  actions.innerHTML = '';
+  if (page === 'notes') {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="createNote()">+ Nota</button>`;
+  } else if (page === 'tasks') {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openCreateTask()">+ Tarea</button>`;
+  } else if (page === 'files') {
+    actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="document.getElementById('file-input').click()">⬆ Subir</button>`;
+  }
+
+  await _loadCurrentPage();
+}
+
+async function _loadCurrentPage() {
+  if (!_activeGroup) return;
+  if      (_currentPage === 'chat')    await _loadChat();
+  else if (_currentPage === 'notes')   await _loadNotes();
+  else if (_currentPage === 'tasks')   await _loadTasks();
+  else if (_currentPage === 'files')   await _loadFiles();
+  else if (_currentPage === 'history') await _loadHistory();
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const div = document.createElement('div');
+  div.className = `toast ${type}`;
+  div.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span><span>${_escHtml(msg)}</span>`;
+  container.appendChild(div);
+  setTimeout(() => div.remove(), 3500);
+}
+
+function _esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function _escHtml(str) { return _esc(str); }
+function _escAttr(str) { return _esc(str); }
+
+function _timeAgo(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1)  return 'ahora';
+  if (m < 60) return `hace ${m}m`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `hace ${h}h`;
+  return new Date(iso).toLocaleDateString('es-ES', { day:'numeric', month:'short' });
+}
+
+// Cerrar dropdown al hacer clic fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('#group-switcher')) closeGroupDropdown();
+});
+</script>
+</body>
+</html>

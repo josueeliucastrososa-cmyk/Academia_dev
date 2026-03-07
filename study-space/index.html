@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d14">
+  <title>StudySpace — Colabora con tu equipo</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg:       #0d0d14;
+      --surface:  #13131e;
+      --surface2: #1a1a28;
+      --border:   #252535;
+      --border2:  #2e2e45;
+      --text:     #f0f0fa;
+      --text2:    #8888aa;
+      --text3:    #44445a;
+      --accent:   #6c63ff;
+      --accent2:  #9d97ff;
+      --green:    #3ddc84;
+      --yellow:   #ffd166;
+      --pink:     #ff6b9d;
+      --glow:     rgba(108,99,255,.2);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Background grid ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(108,99,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108,99,255,.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Glow orbs ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width:500px; height:500px; background:rgba(108,99,255,.12); top:-100px; left:-100px; }
+    .orb-2 { width:400px; height:400px; background:rgba(61,220,132,.08); bottom:-80px; right:-80px; }
+    .orb-3 { width:300px; height:300px; background:rgba(255,107,157,.06); top:40%; right:10%; }
+
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Navbar ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,13,20,.7);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .nav-logo span { color: var(--accent2); }
+
+    /* ── Hero ── */
+    .hero {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px 60px;
+      text-align: center;
+    }
+    .hero-inner { max-width: 640px; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(108,99,255,.12);
+      border: 1px solid rgba(108,99,255,.3);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent2);
+      font-family: 'Space Mono', monospace;
+      letter-spacing: .5px;
+      margin-bottom: 28px;
+      animation: fadeUp .6s ease both;
+    }
+
+    .hero-title {
+      font-size: clamp(36px, 7vw, 64px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+      animation: fadeUp .6s .1s ease both;
+    }
+    .hero-title .grad {
+      background: linear-gradient(135deg, var(--accent2), var(--pink), var(--yellow));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 17px;
+      color: var(--text2);
+      line-height: 1.65;
+      margin-bottom: 40px;
+      font-weight: 400;
+      animation: fadeUp .6s .2s ease both;
+    }
+
+    /* ── Login card ── */
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 400px;
+      margin: 0 auto;
+      animation: fadeUp .6s .3s ease both;
+      box-shadow: 0 0 60px rgba(108,99,255,.1);
+    }
+
+    .login-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text2);
+      text-align: center;
+      margin-bottom: 20px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: .5px;
+    }
+
+    .btn-google {
+      width: 100%;
+      padding: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all .2s;
+      margin-bottom: 12px;
+    }
+    .btn-google:hover {
+      border-color: var(--accent);
+      background: rgba(108,99,255,.08);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(108,99,255,.15);
+    }
+    .btn-google:active { transform: translateY(0); }
+    .btn-google:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--accent), #8b85ff);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all .2s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(108,99,255,.35);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+      color: var(--text3);
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+    }
+    .divider::before, .divider::after {
+      content:''; flex:1; height:1px; background:var(--border);
+    }
+
+    .invite-input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+      text-align: center;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .invite-input:focus { border-color: var(--accent); }
+    .invite-input::placeholder { color: var(--text3); letter-spacing: 1px; text-transform: none; }
+
+    .error-msg {
+      background: rgba(255,107,107,.12);
+      border: 1px solid rgba(255,107,107,.3);
+      color: #ff6b6b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 14px;
+      display: none;
+      text-align: center;
+    }
+    .error-msg.show { display: block; }
+
+    .login-footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+    .login-footer a { color: var(--accent2); text-decoration: none; }
+
+    /* ── Features ── */
+    .features {
+      padding: 60px 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .features-title {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text3);
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-2px);
+    }
+    .feature-icon { font-size: 24px; margin-bottom: 10px; }
+    .feature-name { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+    .feature-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── Invite banner (cuando viene con ?invite=) ── */
+    .invite-banner {
+      background: linear-gradient(135deg, rgba(61,220,132,.1), rgba(108,99,255,.1));
+      border: 1px solid rgba(61,220,132,.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+    .invite-banner.show { display: block; }
+    .invite-banner-title { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+    .invite-banner-desc  { font-size: 12px; color: var(--text2); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      nav { padding: 14px 16px; }
+      .hero { padding: 50px 16px 40px; }
+      .login-card { padding: 24px 20px; margin: 0 4px; }
+      .features { padding: 40px 16px; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="page">
+    <!-- Nav -->
+    <nav>
+      <div class="nav-logo">
+        <div class="nav-logo-icon">📚</div>
+        Study<span>Space</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">by Academia Dev</div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-badge">✦ Colaboración académica en tiempo real</div>
+
+        <h1 class="hero-title">
+          Estudia mejor<br>
+          <span class="grad">junto a tu equipo</span>
+        </h1>
+
+        <p class="hero-sub">
+          Chat, notas compartidas, tareas grupales y archivos — todo en un solo lugar para tu clase o grupo de estudio.
+        </p>
+
+        <!-- Login Card -->
+        <div class="login-card">
+          <!-- Banner de invitación -->
+          <div class="invite-banner" id="invite-banner">
+            <div class="invite-banner-title">🎉 Fuiste invitado a un grupo</div>
+            <div class="invite-banner-desc" id="invite-banner-desc">Inicia sesión para unirte automáticamente</div>
+          </div>
+
+          <div class="login-title">INICIAR SESIÓN</div>
+          <div class="error-msg" id="error-msg"></div>
+
+          <button class="btn-google" id="btn-google" onclick="handleGoogleLogin()">
+            <span style="font-size:18px;">🔐</span>
+            <span>Continuar con Google</span>
+          </button>
+
+          <div class="divider">o únete con código</div>
+
+          <input
+            class="invite-input"
+            id="invite-input"
+            type="text"
+            placeholder="Código de invitación"
+            maxlength="8"
+            oninput="this.value = this.value.toUpperCase()"
+          >
+          <button class="btn-primary" onclick="handleJoinWithCode()">
+            Unirme al grupo →
+          </button>
+
+          <div class="login-footer">
+            Al continuar aceptas los
+            <a href="#">Términos de uso</a> y la
+            <a href="#">Política de privacidad</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="features-title">¿Qué incluye?</div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <div class="feature-name">Chat en tiempo real</div>
+          <div class="feature-desc">Mensajes instantáneos con tu grupo de estudio</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <div class="feature-name">Notas compartidas</div>
+          <div class="feature-desc">Editen apuntes juntos con historial de cambios</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <div class="feature-name">Tareas grupales</div>
+          <div class="feature-desc">Asigna y da seguimiento a tareas del equipo</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📁</div>
+          <div class="feature-name">Archivos & PDFs</div>
+          <div class="feature-desc">Comparte documentos con todo el grupo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://mwzezekdxrutpzqbduvh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_O1RMAV7hbpvDwJj0ESgaCg_dd8lZur5';
+    const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'studyspace_auth' }
+    });
+
+    // ── Detectar invite code en URL ──
+    const _urlParams  = new URLSearchParams(window.location.search);
+    const _inviteCode = _urlParams.get('invite') || '';
+
+    window.addEventListener('load', async () => {
+      // Mostrar banner si hay código de invitación
+      if (_inviteCode) {
+        document.getElementById('invite-banner').classList.add('show');
+        document.getElementById('invite-input').value = _inviteCode.toUpperCase();
+        // Buscar nombre del grupo
+        try {
+          const { data } = await _client
+            .from('social_groups')
+            .select('name')
+            .eq('invite_code', _inviteCode.toLowerCase())
+            .single();
+          if (data) {
+            document.getElementById('invite-banner-desc').textContent =
+              `Te invitaron al grupo "${data.name}" — inicia sesión para unirte`;
+          }
+        } catch(e) {}
+      }
+
+      // Si ya está autenticado, redirigir al app
+      const { data: { session } } = await _client.auth.getSession();
+      if (session) {
+        // Si viene con invite, unirse primero
+        if (_inviteCode) {
+          await _joinGroupByCode(_inviteCode, session.user.id);
+        }
+        window.location.href = 'app.html';
+      }
+    });
+
+    async function handleGoogleLogin() {
+      const btn = document.getElementById('btn-google');
+      const err = document.getElementById('error-msg');
+      err.classList.remove('show');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
+
+      // Guardar invite code para después del redirect
+      if (_inviteCode) sessionStorage.setItem('ss_pending_invite', _inviteCode);
+
+      const { error } = await _client.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + window.location.pathname.replace('index.html','') + 'app.html' }
+      });
+
+      if (error) {
+        btn.disabled = false;
+        btn.innerHTML = '<span style="font-size:18px;">🔐</span><span>Continuar con Google</span>';
+        err.textContent = error.message;
+        err.classList.add('show');
+      }
+    }
+
+    async function handleJoinWithCode() {
+      const code = document.getElementById('invite-input').value.trim().toLowerCase();
+      const err  = document.getElementById('error-msg');
+      err.classList.remove('show');
+
+      if (!code) { err.textContent = 'Ingresa un código de invitación'; err.classList.add('show'); return; }
+
+      // Verificar si está autenticado
+      const { data: { session } } = await _client.auth.getSession();
+      if (!session) {
+        // Guardar código y hacer login
+        sessionStorage.setItem('ss_pending_invite', code);
+        handleGoogleLogin();
+        return;
+      }
+
+      // Ya autenticado — unirse al grupo
+      const joined = await _joinGroupByCode(code, session.user.id);
+      if (joined) {
+        window.location.href = 'app.html';
+      } else {
+        err.textContent = 'Código inválido o expirado';
+        err.classList.add('show');
+      }
+    }
+
+    async function _joinGroupByCode(code, userId) {
+      try {
+        // Buscar el grupo
+        const { data: group, error } = await _client
+          .from('social_groups')
+          .select('id, name')
+          .eq('invite_code', code.toLowerCase())
+          .single();
+
+        if (error || !group) return false;
+
+        // Agregar como miembro (si no lo es ya)
+        await _client.from('social_members').upsert(
+          { group_id: group.id, user_id: userId, role: 'member' },
+          { onConflict: 'group_id,user_id' }
+        );
+
+        return true;
+      } catch(e) {
+        console.error('Error uniéndose al grupo:', e);
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>
