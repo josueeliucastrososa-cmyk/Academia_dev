@@ -288,6 +288,18 @@ const DB = {
       .subscribe();
   },
 
+  subscribeMembers(groupId, callback) {
+    return SS.client
+      .channel(`members:${groupId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'social_members',
+        filter: `group_id=eq.${groupId}`
+      }, callback)
+      .subscribe();
+  },
+
   unsubscribe(channel) {
     if (channel) SS.client.removeChannel(channel);
   }

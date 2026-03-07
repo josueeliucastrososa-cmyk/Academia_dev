@@ -38,6 +38,9 @@
           <div class="group-dd-item new" onclick="event.stopPropagation();openCreateGroup()">
             ➕ Crear nuevo grupo
           </div>
+          <div class="group-dd-item new" onclick="event.stopPropagation();openJoinByCodeModal()" style="color:var(--accent2);">
+            🔗 Ingresar con código
+          </div>
         </div>
       </div>
     </div>
@@ -304,6 +307,22 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-create-task')">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmCreateTask()">Crear tarea →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Unirse por código -->
+<div class="modal-overlay" id="modal-join-code">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-title">🔗 Unirse con código</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Ingresa el código que te compartió el admin del grupo.</p>
+    <div class="form-group">
+      <label class="form-label">CÓDIGO DE INVITACIÓN</label>
+      <input class="form-input" id="join-code-input" placeholder="Ej: ABC123" maxlength="20" style="font-family:'Space Mono',monospace;font-size:18px;font-weight:700;letter-spacing:3px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') confirmJoinByCode()">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-join-code')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmJoinByCode()">Unirse →</button>
     </div>
   </div>
 </div>

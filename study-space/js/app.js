@@ -2,19 +2,26 @@
 // STUDYSPACE — app.js (core: init, grupos, nav, helpers)
 // ═══════════════════════════════════════════════════════════════
 
-
-
 // ── INIT ────────────────────────────────────────────────────────
 (async () => {
   const { data: { session } } = await SS.client.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
+  if (!session) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteFromUrl = urlParams.get('invite');
+    if (inviteFromUrl) sessionStorage.setItem('ss_pending_invite', inviteFromUrl);
+    window.location.href = 'index.html';
+    return;
+  }
 
   _user = session.user;
 
-  // Manejar invite pendiente
-  const pendingInvite = sessionStorage.getItem('ss_pending_invite');
+  // Manejar invite — puede venir del URL directamente o de sessionStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteFromUrl = urlParams.get('invite');
+  const pendingInvite = inviteFromUrl || sessionStorage.getItem('ss_pending_invite');
   if (pendingInvite) {
     sessionStorage.removeItem('ss_pending_invite');
+    if (inviteFromUrl) window.history.replaceState({}, '', window.location.pathname);
     await _joinGroupByCode(pendingInvite);
   }
 
@@ -68,10 +75,14 @@ function _renderGroupDropdown() {
   `).join('');
 }
 
+// Canal de miembros para tiempo real
+let _membersChannel = null;
+
 async function _setActiveGroup(group) {
   SS.DB.unsubscribe(_chatChannel);
   SS.DB.unsubscribe(_notesChannel);
   SS.DB.unsubscribe(_tasksChannel);
+  SS.DB.unsubscribe(_membersChannel);
   if (typeof _pomChannel !== 'undefined') SS.DB.unsubscribe(_pomChannel);
   _pomPage = false;
   clearInterval(typeof _pomTick !== 'undefined' ? _pomTick : null);
@@ -84,12 +95,22 @@ async function _setActiveGroup(group) {
   _members = await SS.DB.getGroupMembers(group.id);
   document.getElementById('members-count').textContent = _members.length;
 
-  _chatChannel  = SS.DB.subscribeMessages(group.id, _onNewMessage, _onDeleteMessage);
-  _notesChannel = SS.DB.subscribeNotes(group.id, _onNoteChange);
-  _tasksChannel = SS.DB.subscribeTasks(group.id, _onTaskChange);
+  _chatChannel    = SS.DB.subscribeMessages(group.id, _onNewMessage, _onDeleteMessage);
+  _notesChannel   = SS.DB.subscribeNotes(group.id, _onNoteChange);
+  _tasksChannel   = SS.DB.subscribeTasks(group.id, _onTaskChange);
+  _membersChannel = SS.DB.subscribeMembers(group.id, _onMemberChange);
 
   await _loadCurrentPage();
   _renderGroupDropdown();
+}
+
+async function _onMemberChange(payload) {
+  _members = await SS.DB.getGroupMembers(_activeGroup.id);
+  document.getElementById('members-count').textContent = _members.length;
+  if (payload.eventType === 'INSERT' && payload.new.user_id !== _user.id) {
+    const newMember = _members.find(m => m.id === payload.new.user_id);
+    showToast(`👋 ${newMember?.username || 'Alguien'} se unió al grupo`, 'info');
+  }
 }
 
 function _showNoGroupState() {
@@ -98,9 +119,10 @@ function _showNoGroupState() {
       <div class="empty-state-icon">🏫</div>
       <div class="empty-state-title">No perteneces a ningún grupo</div>
       <div class="empty-state-desc">Crea un grupo o pide un link de invitación a tu equipo</div>
-      <button class="btn btn-primary" style="margin-top:16px;" onclick="openCreateGroup()">
-        ➕ Crear primer grupo
-      </button>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn btn-primary" onclick="openCreateGroup()">➕ Crear grupo</button>
+        <button class="btn btn-ghost" onclick="openJoinByCodeModal()">🔗 Ingresar con código</button>
+      </div>
     </div>
   `;
 }
@@ -133,18 +155,52 @@ async function confirmCreateGroup() {
   }
 }
 
+// ── UNIRSE POR CÓDIGO ────────────────────────────────────────────
+
+function openJoinByCodeModal() {
+  closeGroupDropdown();
+  document.getElementById('join-code-input').value = '';
+  openModal('modal-join-code');
+}
+
+async function confirmJoinByCode() {
+  const code = document.getElementById('join-code-input').value.trim();
+  if (!code) { showToast('Ingresa un código', 'error'); return; }
+  const btn = document.querySelector('#modal-join-code .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Uniéndose...';
+  try {
+    const joined = await _joinGroupByCode(code);
+    if (joined) {
+      closeModal('modal-join-code');
+      await _loadGroups();
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Unirse →';
+  }
+}
+
 async function _joinGroupByCode(code) {
   try {
-    const { data: group } = await SS.client
+    const { data: group, error } = await SS.client
       .from('social_groups').select('id, name')
-      .eq('invite_code', code.toLowerCase()).single();
-    if (!group) return;
+      .eq('invite_code', code.toLowerCase().trim()).single();
+    if (error || !group) {
+      showToast('Código inválido o grupo no encontrado', 'error');
+      return false;
+    }
     await SS.client.from('social_members').upsert(
       { group_id: group.id, user_id: _user.id, role: 'member' },
       { onConflict: 'group_id,user_id' }
     );
     showToast(`¡Te uniste a "${group.name}"!`, 'success');
-  } catch(e) {}
+    return true;
+  } catch(e) {
+    console.error(e);
+    showToast('Error al unirse al grupo', 'error');
+    return false;
+  }
 }
 
 // ── MODALES ─────────────────────────────────────────────────────
@@ -183,6 +239,7 @@ async function confirmLeaveGroup() {
   if (!confirm(`¿Salir del grupo "${_activeGroup.name}"?`)) return;
   await SS.DB.leaveGroup(_activeGroup.id, _user.id);
   closeModal('modal-members');
+  SS.DB.unsubscribe(_membersChannel);
   await _loadGroups();
   showToast('Saliste del grupo', 'info');
 }
@@ -231,10 +288,10 @@ async function switchPage(page) {
 
 async function _loadCurrentPage() {
   if (!_activeGroup) return;
-  if      (_currentPage === 'chat')    await _loadChat();
-  else if (_currentPage === 'notes')   await _loadNotes();
-  else if (_currentPage === 'tasks')   await _loadTasks();
-  else if (_currentPage === 'files')   await _loadFiles();
+  if      (_currentPage === 'chat')     await _loadChat();
+  else if (_currentPage === 'notes')    await _loadNotes();
+  else if (_currentPage === 'tasks')    await _loadTasks();
+  else if (_currentPage === 'files')    await _loadFiles();
   else if (_currentPage === 'history')  await _loadHistory();
   else if (_currentPage === 'pomodoro') await _loadPomodoro();
 }
