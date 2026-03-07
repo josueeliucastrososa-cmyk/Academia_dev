@@ -217,8 +217,8 @@ html, body {
 .topbar-actions { display:flex; gap:8px; align-items:center; }
 
 /* ── Pages ── */
-.pages { flex:1; overflow:hidden; position:relative; }
-.page { display:none; height:100%; flex-direction:column; overflow:hidden; }
+.pages { flex:1; overflow:hidden; position:relative; display:flex; flex-direction:column; min-height:0; }
+.page { display:none; flex:1; flex-direction:column; overflow:hidden; min-height:0; }
 .page.active { display:flex; }
 
 /* ── Buttons ── */
@@ -401,7 +401,8 @@ html, body {
 .notes-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -511,7 +512,7 @@ html, body {
    TAREAS GRUPALES
    ═══════════════════════════════════════════════════════════════ */
 
-.tasks-page { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+.tasks-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .tasks-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
@@ -576,7 +577,7 @@ html, body {
    ARCHIVOS
    ═══════════════════════════════════════════════════════════════ */
 
-.files-page { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+.files-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .files-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
@@ -636,7 +637,7 @@ html, body {
    HISTORIAL DE NOTAS
    ═══════════════════════════════════════════════════════════════ */
 
-.history-page { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+.history-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .history-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
@@ -822,8 +823,25 @@ html, body {
   .files-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
   .topbar { padding: 0 12px; }
-  .pages { overflow: auto; }
-  .page { height: auto; min-height: calc(100vh - var(--topbar-h)); }
+
+  /* En mobile las páginas hacen scroll normalmente */
+  .pages { overflow-y: auto; flex:1; }
+  .page  { display:none; flex-direction:column; min-height:calc(100vh - var(--topbar-h)); }
+  .page.active { display:flex; }
+
+  /* Chat en mobile: input fijo abajo */
+  .chat-layout { position:relative; min-height:calc(100vh - var(--topbar-h)); }
+  .chat-messages { flex:1; overflow-y:auto; padding-bottom: 70px; }
+  .chat-input-wrap { position:fixed; bottom:0; left:0; right:0; z-index:50; }
+
+  /* Tareas, archivos, historial scroll en mobile */
+  .tasks-page, .files-page, .history-page { min-height:calc(100vh - var(--topbar-h)); height:auto; }
+  .tasks-list, .history-list { overflow-y:visible; }
+  .files-grid { overflow-y:visible; }
+
+  /* Notas en mobile */
+  .page#page-notes { min-height:calc(100vh - var(--topbar-h)); }
+  .note-editor { min-height: 400px; }
 }
 
 .hamburger {
