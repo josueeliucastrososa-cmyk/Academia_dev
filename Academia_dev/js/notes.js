@@ -835,10 +835,13 @@ function addNewDrawingNote() {
 function deleteCurrentNote() {
   if (!_currentNoteId) return;
   if (!confirm('¿Eliminar esta nota?')) return;
-  clearTimeout(_noteAutoSaveTimer); // evitar que autosave pendiente reactive la nota borrada
+  // Cancelar cualquier timer pendiente ANTES de nulificar el ID
+  clearTimeout(_noteAutoSaveTimer);
+  _noteAutoSaveTimer = null;
+  const idToDelete = _currentNoteId;
+  _currentNoteId = null; // nullificar primero para que _autoCommitNote no resurja la nota
   const sem = State._activeSem;
-  if (sem.notesArray) sem.notesArray = sem.notesArray.filter(n => n.id !== _currentNoteId);
-  _currentNoteId = null;
+  if (sem.notesArray) sem.notesArray = sem.notesArray.filter(n => n.id !== idToDelete);
   saveState(['all']);
   renderFoldersList();
   renderNotesList();
@@ -1056,8 +1059,9 @@ async function _tesseractCanvas(cvs) {
 // ── END PDF SCANNER ───────────────────────────────────────────
 
 function _autoCommitNote() {
+  if (!_currentNoteId) return; // nota ya eliminada
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
-  if (!note) return;
+  if (!note) return; // nota no encontrada — fue borrada, no guardar
   const titleInp = _el('notes-title-inp');
   const rte = document.getElementById('notes-rte');
   if (titleInp) note.title = titleInp.value;
