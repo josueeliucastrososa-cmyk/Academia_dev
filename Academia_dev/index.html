@@ -87,12 +87,30 @@
       </div>
     </div>
 
-    <!-- Botón tutorial -->
+    <!-- Botón StudySpace -->
     <div style="padding:8px 12px;border-top:1px solid var(--border);">
+      <a href="https://study-space-nine.vercel.app" target="_blank" rel="noopener" style="text-decoration:none;">
+        <button style="
+          width:100%;padding:9px 12px;
+          background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,107,157,.1));
+          border:1px solid rgba(108,99,255,.3);border-radius:8px;
+          color:var(--accent2);cursor:pointer;font-size:12px;font-weight:700;
+          display:flex;align-items:center;gap:8px;
+          transition:border-color .15s,background .15s;
+        " onmouseover="this.style.borderColor='var(--accent)';this.style.background='linear-gradient(135deg,rgba(108,99,255,.25),rgba(255,107,157,.15))'"
+           onmouseout="this.style.borderColor='rgba(108,99,255,.3)';this.style.background='linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,107,157,.1))'">
+          📚 <span>StudySpace</span>
+          <span style="margin-left:auto;font-size:9px;font-family:'Space Mono',monospace;color:var(--text3);">↗</span>
+        </button>
+      </a>
+    </div>
+
+    <!-- Botón tutorial -->
+    <div style="padding:4px 12px 10px;">
       <button onclick="showTutorial()" style="
-        width:100%;padding:8px 12px;background:none;
+        width:100%;padding:7px 12px;background:none;
         border:1px solid var(--border);border-radius:8px;
-        color:var(--text3);cursor:pointer;font-size:12px;
+        color:var(--text3);cursor:pointer;font-size:11px;
         display:flex;align-items:center;gap:8px;
         transition:border-color .15s,color .15s;
       " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
