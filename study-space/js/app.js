@@ -82,6 +82,9 @@ async function _setActiveGroup(group) {
   SS.DB.unsubscribe(_chatChannel);
   SS.DB.unsubscribe(_notesChannel);
   SS.DB.unsubscribe(_tasksChannel);
+  if (typeof _pomChannel !== 'undefined') SS.DB.unsubscribe(_pomChannel);
+  _pomPage = false;
+  clearInterval(typeof _pomTick !== 'undefined' ? _pomTick : null);
 
   _activeGroup = group;
   document.getElementById('active-group-name').textContent = group.name;
@@ -223,7 +226,7 @@ async function switchPage(page) {
   document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
   closeSidebar();
 
-  const titles = { chat:'💬 Chat', notes:'📝 Notas compartidas', tasks:'✅ Tareas', files:'📁 Archivos', history:'🕐 Historial' };
+  const titles = { chat:'💬 Chat', notes:'📝 Notas compartidas', tasks:'✅ Tareas', files:'📁 Archivos', history:'🕐 Historial', pomodoro:'🍅 Pomodoro & Vaca' };
   document.getElementById('topbar-title').textContent = titles[page] || page;
 
   const actions = document.getElementById('topbar-actions');
@@ -231,6 +234,7 @@ async function switchPage(page) {
   if      (page === 'notes') actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="createNote()">+ Nota</button>`;
   else if (page === 'tasks') actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="openCreateTask()">+ Tarea</button>`;
   else if (page === 'files') actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="document.getElementById('file-input').click()">⬆ Subir</button>`;
+  if (page !== 'pomodoro' && typeof _pomPage !== 'undefined') _pomPage = false;
 
   await _loadCurrentPage();
 }
@@ -241,7 +245,8 @@ async function _loadCurrentPage() {
   else if (_currentPage === 'notes')   await _loadNotes();
   else if (_currentPage === 'tasks')   await _loadTasks();
   else if (_currentPage === 'files')   await _loadFiles();
-  else if (_currentPage === 'history') await _loadHistory();
+  else if (_currentPage === 'history')  await _loadHistory();
+  else if (_currentPage === 'pomodoro') await _loadPomodoro();
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────
