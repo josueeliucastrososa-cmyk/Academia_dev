@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
 // STUDYSPACE — db.js
-// Todas las operaciones contra Supabase
 // ═══════════════════════════════════════════════════════════════
 
 window.SS = window.SS || {};
@@ -18,7 +17,6 @@ const DB = {
   },
 
   async createGroup(name, description, userId) {
-    // 1. Crear grupo
     const { data: group, error } = await SS.client
       .from('social_groups')
       .insert({ name, description, created_by: userId })
@@ -26,11 +24,10 @@ const DB = {
       .single();
     if (error) throw error;
 
-    // 2. Unirse como admin
     await SS.client.from('social_members').insert({
       group_id: group.id,
-      user_id: userId,
-      role: 'admin'
+      user_id:  userId,
+      role:     'admin'
     });
 
     return group;
@@ -39,7 +36,7 @@ const DB = {
   async getGroupMembers(groupId) {
     const { data, error } = await SS.client
       .from('social_members')
-      .select('role, joined_at, social_profiles!social_members_user_id_fkey(id, username, avatar_url)')
+      .select('role, joined_at, social_profiles!fk_social_members_profile(id, username, avatar_url)')
       .eq('group_id', groupId);
     if (error) throw error;
     return data.map(m => ({ ...m.social_profiles, role: m.role, joined_at: m.joined_at }));
@@ -55,7 +52,7 @@ const DB = {
       .from('social_members')
       .delete()
       .eq('group_id', groupId)
-      .eq('user_id', userId);
+      .eq('user_id',  userId);
     if (error) throw error;
   },
 
@@ -64,7 +61,7 @@ const DB = {
   async getMessages(groupId, limit = 60) {
     const { data, error } = await SS.client
       .from('social_messages')
-      .select('*, social_profiles(username, avatar_url)')
+      .select('*, social_profiles!social_messages_user_id_fkey(username, avatar_url)')
       .eq('group_id', groupId)
       .order('created_at', { ascending: true })
       .limit(limit);
@@ -76,7 +73,7 @@ const DB = {
     const { data, error } = await SS.client
       .from('social_messages')
       .insert({ group_id: groupId, user_id: userId, content })
-      .select('*, social_profiles(username, avatar_url)')
+      .select('*, social_profiles!social_messages_user_id_fkey(username, avatar_url)')
       .single();
     if (error) throw error;
     return data;
@@ -129,9 +126,9 @@ const DB = {
 
   async saveNoteHistory(noteId, groupId, userId, snapshot, description) {
     const { error } = await SS.client.from('social_note_history').insert({
-      note_id: noteId,
-      group_id: groupId,
-      user_id: userId,
+      note_id:     noteId,
+      group_id:    groupId,
+      user_id:     userId,
       snapshot,
       description: description || 'Editó la nota'
     });
@@ -141,7 +138,7 @@ const DB = {
   async getNoteHistory(noteId) {
     const { data, error } = await SS.client
       .from('social_note_history')
-      .select('*, social_profiles(username, avatar_url)')
+      .select('*, social_profiles!social_note_history_user_id_fkey(username, avatar_url)')
       .eq('note_id', noteId)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -152,7 +149,7 @@ const DB = {
   async getAllGroupHistory(groupId) {
     const { data, error } = await SS.client
       .from('social_note_history')
-      .select('*, social_profiles(username, avatar_url), social_notes(title)')
+      .select('*, social_profiles!social_note_history_user_id_fkey(username, avatar_url), social_notes(title)')
       .eq('group_id', groupId)
       .order('created_at', { ascending: false })
       .limit(80);
@@ -203,7 +200,7 @@ const DB = {
   async getFiles(groupId) {
     const { data, error } = await SS.client
       .from('social_files')
-      .select('*, social_profiles(username, avatar_url)')
+      .select('*, social_profiles!social_files_uploaded_by_fkey(username, avatar_url)')
       .eq('group_id', groupId)
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -214,20 +211,20 @@ const DB = {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const data64 = e.target.result;
-        const ext = file.name.split('.').pop().toLowerCase();
-        const fileType = ['pdf'].includes(ext) ? 'pdf' : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'image' : 'file';
-
+        const data64   = e.target.result;
+        const ext      = file.name.split('.').pop().toLowerCase();
+        const fileType = ['pdf'].includes(ext) ? 'pdf'
+                       : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'image'
+                       : 'file';
         const { data, error } = await SS.client
           .from('social_files')
           .insert({
-            group_id: groupId,
-            user_id: userId,
+            group_id:    groupId,
             uploaded_by: userId,
-            name: file.name,
-            file_type: fileType,
-            data: data64,
-            size: file.size
+            name:        file.name,
+            file_type:   fileType,
+            data:        data64,
+            size:        file.size
           })
           .select()
           .single();
@@ -249,42 +246,22 @@ const DB = {
   subscribeMessages(groupId, onInsert, onDelete) {
     return SS.client
       .channel(`messages:${groupId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'social_messages',
-        filter: `group_id=eq.${groupId}`
-      }, onInsert)
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'social_messages',
-        filter: `group_id=eq.${groupId}`
-      }, onDelete)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'social_messages', filter: `group_id=eq.${groupId}` }, onInsert)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'social_messages', filter: `group_id=eq.${groupId}` }, onDelete)
       .subscribe();
   },
 
   subscribeNotes(groupId, callback) {
     return SS.client
       .channel(`notes:${groupId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'social_notes',
-        filter: `group_id=eq.${groupId}`
-      }, callback)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'social_notes', filter: `group_id=eq.${groupId}` }, callback)
       .subscribe();
   },
 
   subscribeTasks(groupId, callback) {
     return SS.client
       .channel(`tasks:${groupId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'social_tasks',
-        filter: `group_id=eq.${groupId}`
-      }, callback)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'social_tasks', filter: `group_id=eq.${groupId}` }, callback)
       .subscribe();
   },
 
