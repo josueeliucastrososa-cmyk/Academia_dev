@@ -271,7 +271,7 @@ html, body {
    CHAT
    ═══════════════════════════════════════════════════════════════ */
 
-.chat-layout { display:flex; flex-direction:column; height:100%; }
+.chat-layout { flex-direction:column; height:100%; }
 
 .chat-messages {
   flex: 1;
