@@ -210,7 +210,7 @@
       <div class="error-msg" id="errorMsg"></div>
       <div class="success-msg" id="successMsg"></div>
 
-      <button class="btn btn-secondary" onclick="handleGoogleLogin()">
+      <button class="btn btn-secondary" onclick="handleGoogleLogin(this)">
         <span style="font-size: 18px;">🔐</span>
         <span>Ingresar con Google</span>
       </button>
@@ -247,27 +247,42 @@
       }
     }
 
-    function handleGoogleLogin() {
-      waitForAuth(async () => {
-        const btn = event.target.closest('.btn');
-        const errorMsg = document.getElementById('errorMsg');
+    function handleGoogleLogin(btn) {
+      // FIX iOS Safari: capturar btn SINCRÓNICAMENTE antes de cualquier async/setTimeout
+      // Safari bloquea redirecciones OAuth si no se inician directo en el click handler
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.classList.remove('show');
+      btn.disabled = true;
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
 
-        errorMsg.classList.remove('show');
+      const doLogin = () => {
+        window.Auth.signInGoogle().then(result => {
+          if (!result.success) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            errorMsg.textContent = result.error;
+            errorMsg.classList.add('show');
+          }
+          // Si es exitoso, Google redirige automáticamente
+        });
+      };
 
-        btn.disabled = true;
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
-
-        const result = await window.Auth.signInGoogle();
-
-        if (!result.success) {
-          btn.disabled = false;
-          btn.innerHTML = originalHTML;
-          errorMsg.textContent = result.error;
-          errorMsg.classList.add('show');
-        }
-        // Si es exitoso, Google redirige automáticamente
-      });
+      if (window.Auth && window.Auth.signInGoogle) {
+        doLogin();
+      } else {
+        // Fallback: Auth aún no cargó (raro), reintentar una sola vez
+        setTimeout(() => {
+          if (window.Auth && window.Auth.signInGoogle) {
+            doLogin();
+          } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            errorMsg.textContent = 'Error: recarga la página e intenta de nuevo.';
+            errorMsg.classList.add('show');
+          }
+        }, 300);
+      }
     }
 
     // Verificar si ya está autenticado
